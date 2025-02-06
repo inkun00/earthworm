@@ -4,16 +4,16 @@ import json
 import random
 
 image_urls = [
-    "https://th.bing.com/th/id/OIG3.Uz.xDBxlVNibFgEjiT5W?w=1024&h=1024&rs=1&pid=ImgDetMain",
-    "https://th.bing.com/th/id/OIG3.twQwix3FmFlTRMIcglgd?pid=ImgGn",
-    "https://th.bing.com/th/id/OIG3.oUi.N071zMOws7ZOYdMu?pid=ImgGn",
-    "https://th.bing.com/th/id/OIG3.prZonk7ntCI1yLkr0nD_?pid=ImgGn",
-    "https://th.bing.com/th/id/OIG4.vjTVC7hLPssO.IxGkMGh?w=1024&h=1024&rs=1&pid=ImgDetMain",
-    "https://th.bing.com/th/id/OIG4.2l7tpz7q9Pp7pS1iDnot?pid=ImgGn",
-    "https://th.bing.com/th/id/OIG4.iBJtWJ2iV58eGcxL47LR?pid=ImgGn",
-    "https://th.bing.com/th/id/OIG4.wurI3kJUGEadhvp77eos?pid=ImgGn",
-    "https://th.bing.com/th/id/OIG2.negJs7eXMrsMNEIqCcue?w=1024&h=1024&rs=1&pid=ImgDetMain",
-    "https://th.bing.com/th/id/OIG2.ycoVdo8zjxET4xrUpbJg?pid=ImgGn"
+    "https://th.bing.com/th/id/OIG4.sbvsXcpjpETlz2LO_4g6?w=1024&h=1024&rs=1&pid=ImgDetMain",
+    "https://th.bing.com/th/id/OIG4.sbvsXcpjpETlz2LO_4g6?w=1024&h=1024&rs=1&pid=ImgDetMain",
+    "https://th.bing.com/th/id/OIG4.fmafTjPZwEX17n9E4H49?pid=ImgGn",
+    "https://th.bing.com/th/id/OIG4.fmafTjPZwEX17n9E4H49?pid=ImgGn",
+    "https://th.bing.com/th/id/OIG4.0ugOUMKI2F1pZFRxpgfU?pid=ImgGn",
+    "https://th.bing.com/th/id/OIG4.0ugOUMKI2F1pZFRxpgfU?pid=ImgGn",
+    "https://th.bing.com/th/id/OIG4.fD.2uF_znryBJ9P_dlkH?pid=ImgGn",
+    "https://th.bing.com/th/id/OIG4.fD.2uF_znryBJ9P_dlkH?pid=ImgGn",
+    "https://th.bing.com/th/id/OIG3.fppMpx_V9bOB3msD.EbQ?w=1024&h=1024&rs=1&pid=ImgDetMain",
+    "https://th.bing.com/th/id/OIG3.dMg4p1gEo.bpqfkgQyQr?w=1024&h=1024&rs=1&pid=ImgDetMain"
 ]
 
 # 처음 실행 시, 이미지 선택을 한 번만 실행하도록 설정
