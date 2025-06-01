@@ -202,6 +202,9 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
+# → 주석을 풀고, 실제로 chat-box 컨테이너를 연다
+st.markdown('<div class="chat-box">', unsafe_allow_html=True)
+
 # 콜백 함수 정의
 def send_message():
     if st.session_state.input_message:
@@ -234,8 +237,7 @@ def copy_chat_history():
     st.session_state.copied_chat_history = chat_history_text
 
 
-# Display the chat history (excluding the first initial instruction and specific messages)
-#st.markdown('<div class="chat-box">', unsafe_allow_html=True)
+# Display the chat history (excluding the 첫 3개의 초기 메시지)
 for message in st.session_state.chat_history[3:]:
     if "에 맞게 생성해" not in message["content"] and "나는" not in message["content"]:
         role = "User" if message["role"] == "user" else "Chatbot"
@@ -246,7 +248,7 @@ for message in st.session_state.chat_history[3:]:
         if role == "Chatbot":
             st.markdown(f'''
                 <div class="message-container">
-                    <img src="{profile_url}" class="profile-pic">
+                    <img src="{profile_url}" class="profile-pic" alt="프로필 이미지">
                     <div class="{message_class}">
                         {message["content"]}
                     </div>
@@ -259,6 +261,7 @@ for message in st.session_state.chat_history[3:]:
                     </div>
                 </div>''', unsafe_allow_html=True)
 
+# chat-box 영역 닫기
 st.markdown('</div>', unsafe_allow_html=True)
 
 # Create a form for user input and buttons
