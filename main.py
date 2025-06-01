@@ -107,7 +107,7 @@ st.markdown('<h1 class="title">지렁이 챗봇</h1>', unsafe_allow_html=True)
 # 프로필 이미지 URL 정의
 bot_profile_url = selected_image   # 챗봇 프로필 이미지 URL
 
-# 스타일 정의 - 전체 페이지에 배경색 강제 적용, 불필요한 경계선 제거
+# 스타일 정의 - 채팅창 고정 높이/스크롤 추가
 st.markdown(f"""
     <style>
     body, .main, .block-container {{
@@ -151,13 +151,15 @@ st.markdown(f"""
     }}
     .chat-box {{
         background-color: #BACEE0 !important;
-        border: none;  /* 불필요한 경계선 제거 */
+        border: none;
         padding: 20px;
         border-radius: 10px;
-        max-height: 400px;
-        overflow-y: scroll;
-        margin: 0 auto;
         width: 80%;
+        margin: 20px auto;
+        
+        /* 아래 두 줄이 중요합니다: */
+        height: 400px;         /* 채팅창 높이 고정 */
+        overflow-y: auto;      /* 세로 스크롤바 활성화 */
     }}
     .stTextInput > div > div > input {{
         height: 38px;
@@ -202,13 +204,11 @@ def send_message():
             'includeAiFilters': True,
             'seed': 0
         }
-
         completion_executor.execute(completion_request)
         st.session_state.input_message = ""  # 입력 필드를 초기화
 
 # 대화 내용 표시 (초기 메시지 이후부터)
 for message in st.session_state.chat_history[3:]:
-    # 불필요한 키워드 필터 삭제 (연령 관련 메시지가 없으므로 따로 걸러주는 부분도 제거)
     role = "User" if message["role"] == "user" else "Chatbot"
     profile_url = bot_profile_url if role == "Chatbot" else None
     message_class = 'message-user' if role == "User" else 'message-assistant'
@@ -236,39 +236,9 @@ st.markdown('</div>', unsafe_allow_html=True)
 # 사용자 입력창 및 버튼
 st.markdown('<div class="input-container">', unsafe_allow_html=True)
 with st.form(key="input_form", clear_on_submit=True):
-    cols = st.columns([7.5, 1, 1])  # 입력창의 길이를 적절히 조정
+    cols = st.columns([7.5, 1])  # 복사 버튼이 필요 없다면 두 칸만 사용해도 됩니다.
     with cols[0]:
         user_message = st.text_input("메시지를 입력하세요:", key="input_message", placeholder="")
     with cols[1]:
         submit_button = st.form_submit_button(label="전송", on_click=send_message)
-    with cols[2]:
-        # 복사 버튼이 필요 없으면 이 부분을 통째로 제거해도 됩니다.
-        def copy_chat_history():
-            filtered_chat_history = [
-                msg for msg in st.session_state.chat_history[3:]
-            ]
-            chat_history_text = "\n".join([f"{msg['role']}: {msg['content']}" for msg in filtered_chat_history])
-            st.session_state.copied_chat_history = chat_history_text
-
-        copy_button = st.form_submit_button(label="복사", on_click=copy_chat_history)
 st.markdown('</div>', unsafe_allow_html=True)
-
-# 복사된 대화 내용을 아래에 표시 (필요 없으면 삭제 가능)
-if st.session_state.copied_chat_history:
-    st.markdown("<h3>대화 내용 정리</h3>", unsafe_allow_html=True)
-    st.text_area("", value=st.session_state.copied_chat_history, height=200, key="copied_chat_history_text_area")
-    chat_history = st.session_state.copied_chat_history.replace("\n", "\\n").replace('"', '\\"')
-    st.components.v1.html(f"""
-        <textarea id="copied_chat_history_text_area" style="display:none;">{chat_history}</textarea>
-        <button onclick="copyToClipboard()" class="copy-button">클립보드로 복사</button>
-        <script>
-        function copyToClipboard() {{
-            var text = document.getElementById('copied_chat_history_text_area').value.replace(/\\\\n/g, '\\n');
-            navigator.clipboard.writeText(text).then(function() {{
-                alert('클립보드로 복사되었습니다!');
-            }}, function(err) {{
-                console.error('복사 실패: ', err);
-            }});
-        }}
-        </script>
-    """, height=100)
