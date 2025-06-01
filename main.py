@@ -59,7 +59,7 @@ class CompletionExecutor:
             'Accept': 'text/event-stream'
         }
 
-        with requests.post(self._host + '/testapp/v1/chat-completions/HCX-003',
+        with requests.post(self._host + '/testapp/v1/chat-completions/HCX-005',
                            headers=headers, json=completion_request, stream=True) as r:
             response_data = r.content.decode('utf-8')
 
