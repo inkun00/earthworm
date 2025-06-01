@@ -25,7 +25,16 @@ selected_image = st.session_state.selected_image
 # Streamlit의 세션 상태를 사용하여 대화 내용을 저장
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = [
-        {'role': 'user','content': '너는 지렁이야. 너의 이름은 너가 알아서 지어. 너는 내 친구야. 다정한 말투로 대화해. 나에게 친한 말투로 반말을 사용해. 대화는 2문장 이내로 간단하게 해. 지렁이는 습하고 기름진 땅을 좋아해. 피부를 통해 산소를 빨아들여. 비가 오면 땅에 흙 속에 산소공급이 잘 이뤄지지 않아 숨을 쉬기 위해 땅 밖으로 나와. 하지만 헤매다 흙을 못찾으면 강한 햇볕에 말라 죽기도 해.'},
+        {
+            'role': 'user',
+            'content': (
+                '너는 지렁이야. 너의 이름은 너가 알아서 지어. '
+                '너는 내 친구야. 다정한 말투로 대화해. 나에게 친한 말투로 반말을 사용해. '
+                '대화는 2문장 이내로 간단하게 해. 지렁이는 습하고 기름진 땅을 좋아해. '
+                '피부를 통해 산소를 빨아들여. 비가 오면 땅에 흙 속에 산소공급이 잘 이뤄지지 않아 '
+                '숨을 쉬기 위해 땅 밖으로 나와. 하지만 헤매다 흙을 못찾으면 강한 햇볕에 말라 죽기도 해.'
+            )
+        },
         {'role': 'assistant', 'content': '알겠어.'},
         {'role': 'assistant', 'content': '안녕, 나는 지렁이야 나에 대해서 궁금한 것이 있니?'}
     ]
@@ -35,13 +44,6 @@ if "input_message" not in st.session_state:
 
 if "copied_chat_history" not in st.session_state:
     st.session_state.copied_chat_history = ""
-
-if "user_age" not in st.session_state:
-    st.session_state.user_age = ""
-
-if "last_grade_level" not in st.session_state:
-    st.session_state.last_grade_level = ""
-
 
 class CompletionExecutor:
     def __init__(self, host, api_key, api_key_primary_val, request_id):
@@ -59,8 +61,12 @@ class CompletionExecutor:
             'Accept': 'text/event-stream'
         }
 
-        with requests.post(self._host + '/testapp/v1/chat-completions/HCX-003',
-                           headers=headers, json=completion_request, stream=True) as r:
+        with requests.post(
+            self._host + '/testapp/v1/chat-completions/HCX-003',
+            headers=headers,
+            json=completion_request,
+            stream=True
+        ) as r:
             response_data = r.content.decode('utf-8')
 
             # 데이터를 줄 단위로 나누기
@@ -79,8 +85,8 @@ class CompletionExecutor:
                 try:
                     chat_data = json.loads(json_data)
                     st.session_state.chat_history.append(
-                        {"role": "assistant", "content": chat_data["message"]["content"]})
-
+                        {"role": "assistant", "content": chat_data["message"]["content"]}
+                    )
                 except json.JSONDecodeError as e:
                     print("JSONDecodeError:", e)
             else:
@@ -98,36 +104,10 @@ completion_executor = CompletionExecutor(
 # Set the title of the Streamlit app
 st.markdown('<h1 class="title">지렁이 챗봇</h1>', unsafe_allow_html=True)
 
-# Add radio buttons for grade levels with a default value
-grade_level = st.radio(
-    "학년을 선택하세요:",
-    ('초등학생', '중학생', '고등학생'),
-    horizontal=True
-)
-
-
-def update_user_age():
-    if grade_level != st.session_state.last_grade_level:
-        if grade_level == '초등학생':
-            user_age = '13세 이하'
-        elif grade_level == '중학생':
-            user_age = '16세 이하'
-        elif grade_level == '고등학생':
-            user_age = '19세 이하'
-        st.session_state.user_age = user_age
-        st.session_state.last_grade_level = grade_level
-
-        st.session_state.chat_history.append(
-            {'role': 'user', 'content': f'나는 {st.session_state.user_age} 입니다. 내 연령에 맞는 대화를 해.'}
-        )
-
-
-update_user_age()
-
 # 프로필 이미지 URL 정의
 bot_profile_url = selected_image   # 챗봇 프로필 이미지 URL
 
-# 스타일 정의 - 전체 페이지에 배경색 강제 적용
+# 스타일 정의 - 전체 페이지에 배경색 강제 적용, 불필요한 경계선 제거
 st.markdown(f"""
     <style>
     body, .main, .block-container {{
@@ -136,6 +116,8 @@ st.markdown(f"""
     .title {{
         font-size: 28px !important;
         font-weight: bold;
+        text-align: center;
+        padding-top: 10px;
     }}
     .message-container {{
         display: flex;
@@ -169,14 +151,13 @@ st.markdown(f"""
     }}
     .chat-box {{
         background-color: #BACEE0 !important;
-        border: 1px solid #EDEDED;
+        border: none;  /* 불필요한 경계선 제거 */
         padding: 20px;
         border-radius: 10px;
         max-height: 400px;
         overflow-y: scroll;
-        background-color: #BACEE0 !important; /* 대화창 배경색을 #BACEE0로 설정 */
-        margin: 0 auto;  /* 중앙 정렬 */
-        width: 80%;      /* 전체 페이지의 80% 너비 */
+        margin: 0 auto;
+        width: 80%;
     }}
     .stTextInput > div > div > input {{
         height: 38px;
@@ -184,9 +165,9 @@ st.markdown(f"""
     }}
     .stButton button {{
         height: 38px !important;
-        width: 70px !important; /* 버튼 너비 조정 */
+        width: 70px !important;
         padding: 0px 10px;
-        margin-right: 0px !important;  /* 버튼 사이의 마진 제거 */
+        margin-right: 0px !important;
     }}
     /* 입력창을 하단에 고정하는 스타일 */
     .input-container {{
@@ -198,18 +179,16 @@ st.markdown(f"""
         padding: 10px;
         box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
     }}
-    
     </style>
 """, unsafe_allow_html=True)
 
-# → 주석을 풀고, 실제로 chat-box 컨테이너를 연다
+# → chat-box 영역 시작
 st.markdown('<div class="chat-box">', unsafe_allow_html=True)
 
 # 콜백 함수 정의
 def send_message():
     if st.session_state.input_message:
         user_message = st.session_state.input_message
-        full_message = user_message + f" {st.session_state.user_age}에 맞게 생성해"
         st.session_state.chat_history.append({"role": "user", "content": user_message})
 
         completion_request = {
@@ -225,62 +204,59 @@ def send_message():
         }
 
         completion_executor.execute(completion_request)
-        st.session_state.input_message = ""  # 입력 필드를 초기화합니다.
+        st.session_state.input_message = ""  # 입력 필드를 초기화
 
-
-def copy_chat_history():
-    filtered_chat_history = [
-        msg for msg in st.session_state.chat_history[2:]
-        if not msg["content"].startswith("나는") and "내 연령에 맞는 대화를 해." not in msg["content"]
-    ]
-    chat_history_text = "\n".join([f"{msg['role']}: {msg['content']}" for msg in filtered_chat_history])
-    st.session_state.copied_chat_history = chat_history_text
-
-
-# Display the chat history (excluding the 첫 3개의 초기 메시지)
+# 대화 내용 표시 (초기 메시지 이후부터)
 for message in st.session_state.chat_history[3:]:
-    if "에 맞게 생성해" not in message["content"] and "나는" not in message["content"]:
-        role = "User" if message["role"] == "user" else "Chatbot"
-        profile_url = bot_profile_url if role == "Chatbot" else None
-        message_class = 'message-user' if role == "User" else 'message-assistant'
+    # 불필요한 키워드 필터 삭제 (연령 관련 메시지가 없으므로 따로 걸러주는 부분도 제거)
+    role = "User" if message["role"] == "user" else "Chatbot"
+    profile_url = bot_profile_url if role == "Chatbot" else None
+    message_class = 'message-user' if role == "User" else 'message-assistant'
 
-        # 챗봇 프로필만 표시
-        if role == "Chatbot":
-            st.markdown(f'''
-                <div class="message-container">
-                    <img src="{profile_url}" class="profile-pic" alt="프로필 이미지">
-                    <div class="{message_class}">
-                        {message["content"]}
-                    </div>
-                </div>''', unsafe_allow_html=True)
-        else:
-            st.markdown(f'''
-                <div class="message-container">
-                    <div class="{message_class}">
-                        {message["content"]}
-                    </div>
-                </div>''', unsafe_allow_html=True)
+    # 챗봇 프로필만 표시
+    if role == "Chatbot":
+        st.markdown(f'''
+            <div class="message-container">
+                <img src="{profile_url}" class="profile-pic" alt="프로필 이미지">
+                <div class="{message_class}">
+                    {message["content"]}
+                </div>
+            </div>''', unsafe_allow_html=True)
+    else:
+        st.markdown(f'''
+            <div class="message-container">
+                <div class="{message_class}">
+                    {message["content"]}
+                </div>
+            </div>''', unsafe_allow_html=True)
 
 # chat-box 영역 닫기
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Create a form for user input and buttons
+# 사용자 입력창 및 버튼
 st.markdown('<div class="input-container">', unsafe_allow_html=True)
 with st.form(key="input_form", clear_on_submit=True):
-    cols = st.columns([7.5, 1, 1])  # 입력창의 길이를 줄이고 버튼에 더 많은 공간을 줌
+    cols = st.columns([7.5, 1, 1])  # 입력창의 길이를 적절히 조정
     with cols[0]:
         user_message = st.text_input("메시지를 입력하세요:", key="input_message", placeholder="")
     with cols[1]:
         submit_button = st.form_submit_button(label="전송", on_click=send_message)
     with cols[2]:
+        # 복사 버튼이 필요 없으면 이 부분을 통째로 제거해도 됩니다.
+        def copy_chat_history():
+            filtered_chat_history = [
+                msg for msg in st.session_state.chat_history[3:]
+            ]
+            chat_history_text = "\n".join([f"{msg['role']}: {msg['content']}" for msg in filtered_chat_history])
+            st.session_state.copied_chat_history = chat_history_text
+
         copy_button = st.form_submit_button(label="복사", on_click=copy_chat_history)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Display the copied chat history in a textbox at the bottom
+# 복사된 대화 내용을 아래에 표시 (필요 없으면 삭제 가능)
 if st.session_state.copied_chat_history:
     st.markdown("<h3>대화 내용 정리</h3>", unsafe_allow_html=True)
     st.text_area("", value=st.session_state.copied_chat_history, height=200, key="copied_chat_history_text_area")
-
     chat_history = st.session_state.copied_chat_history.replace("\n", "\\n").replace('"', '\\"')
     st.components.v1.html(f"""
         <textarea id="copied_chat_history_text_area" style="display:none;">{chat_history}</textarea>
