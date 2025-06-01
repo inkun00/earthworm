@@ -3,6 +3,9 @@ import requests
 import json
 import random
 
+# ------------------------------------------------------------
+# 1) 이미지 URL 샘플 (프로필용으로 랜덤 선택)
+# ------------------------------------------------------------
 image_urls = [
     "https://th.bing.com/th/id/OIG4.sbvsXcpjpETlz2LO_4g6?w=1024&h=1024&rs=1&pid=ImgDetMain",
     "https://th.bing.com/th/id/OIG4.sbvsXcpjpETlz2LO_4g6?w=1024&h=1024&rs=1&pid=ImgDetMain",
@@ -16,12 +19,13 @@ image_urls = [
     "https://th.bing.com/th/id/OIG3.dMg4p1gEo.bpqfkgQyQr?w=1024&h=1024&rs=1&pid=ImgDetMain"
 ]
 
-# 처음 실행 시, 이미지 선택을 한 번만 실행하도록 설정
 if "selected_image" not in st.session_state:
     st.session_state.selected_image = random.choice(image_urls)
 selected_image = st.session_state.selected_image
 
-# 세션 상태에 대화 기록 저장
+# ------------------------------------------------------------
+# 2) 세션에 대화 이력 초기화
+# ------------------------------------------------------------
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = [
         {
@@ -41,6 +45,9 @@ if "chat_history" not in st.session_state:
 if "input_message" not in st.session_state:
     st.session_state.input_message = ""
 
+# ------------------------------------------------------------
+# 3) CompletionExecutor 정의 (외부 API 호출용)
+# ------------------------------------------------------------
 class CompletionExecutor:
     def __init__(self, host, api_key, api_key_primary_val, request_id):
         self._host = host
@@ -83,8 +90,9 @@ class CompletionExecutor:
             else:
                 print("JSON 데이터가 없습니다.")
 
-
-# 챗봇 초기화
+# ------------------------------------------------------------
+# 4) 챗봇 초기화
+# ------------------------------------------------------------
 completion_executor = CompletionExecutor(
     host="https://clovastudio.stream.ntruss.com",
     api_key="NTA0MjU2MWZlZTcxNDJiY6Yo7+BLuaAQ2B5+PgEazGquXEqiIf8NRhOG34cVQNdq",
@@ -92,29 +100,41 @@ completion_executor = CompletionExecutor(
     request_id="d1950869-54c9-4bb8-988d-6967d113e03f"
 )
 
-# 타이틀
+# ------------------------------------------------------------
+# 5) 타이틀 및 전반적인 CSS 설정
+# ------------------------------------------------------------
 st.markdown('<h1 class="title">지렁이 챗봇</h1>', unsafe_allow_html=True)
 
-# 스타일 정의: 채팅 출력 영역에 고정 높이 + 스크롤, 입력창 고정
 st.markdown(f"""
     <style>
-    /* 전체 배경 */
+    /* ----------------------------------------
+       전체 페이지 여백/패딩 제거
+    ---------------------------------------- */
     body, .main, .block-container {{
-        background-color: #BACEE0 !important;
-        padding: 0;  /* 불필요한 패딩 제거 */
         margin: 0;
+        padding: 0;
+    }}
+    .stApp {{  /* Streamlit 전체 영역에서 스크롤 방지 */
+        overflow: hidden;
     }}
 
-    /* 타이틀 */
+    /* ----------------------------------------
+       타이틀 (상단 고정, 높이 약 60px)
+    ---------------------------------------- */
     .title {{
         font-size: 28px !important;
         font-weight: bold;
         text-align: center;
-        margin: 10px 0 0 0;
+        line-height: 60px;   /* 세로 중앙 정렬 */
+        height: 60px;        /* 딱 60px 높이 */
+        background-color: #BACEE0;
+        margin: 0;
         padding: 0;
     }}
 
-    /* 각 메시지 컨테이너 */
+    /* ----------------------------------------
+       메시지 하나의 컨테이너
+    ---------------------------------------- */
     .message-container {{
         display: flex;
         margin-bottom: 10px;
@@ -147,21 +167,26 @@ st.markdown(f"""
         flex-shrink: 0;
     }}
 
-    /* 채팅 박스: 상단 타이틀 바로 아래부터, 하단 입력창 바로 위까지 공간 차지 */
+    /* ----------------------------------------
+       채팅 영역 (chat-box)
+       상단: 타이틀(60px) 바로 아래부터
+       하단: 입력창(60px) 바로 위까지
+       overflow-y: auto로 스크롤 처리
+    ---------------------------------------- */
     .chat-box {{
         position: absolute;
-        top: 50px;   /* 타이틀 높이(약 40px) + margin 10px */
-        bottom: 60px;/* 입력창 높이(60px) 만큼 위쪽에 위치 */
+        top: 60px;    /* 타이틀 높이 60px 만큼 내려옴 */
+        bottom: 60px; /* 입력창 높이 60px 만큼 올라옴 */
         left: 0;
         right: 0;
         padding: 20px;
-        overflow-y: auto; /* 스크롤바 보이게 */
+        overflow-y: auto; /* 내용이 넘칠 때만 세로 스크롤 */
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
+        background-color: #BACEE0;
     }}
-
-    /* 스크롤바 디자인(원하면 생략 가능) */
+    /* 스크롤바가 너무 두껍게 나오면, 아래 스타일을 조정하세요 */
     .chat-box::-webkit-scrollbar {{
         width: 6px;
     }}
@@ -173,23 +198,30 @@ st.markdown(f"""
         background-color: rgba(255,255,255,0.1);
     }}
 
-    /* 입력창 고정 */
+    /* ----------------------------------------
+       입력창 (input-container)
+       position: absolute; bottom: 0 으로 고정
+       높이 60px, z-index: 10으로 채팅박스 위에 렌더링
+    ---------------------------------------- */
     .input-container {{
         position: absolute;
-        height: 60px;
         bottom: 0;
         left: 0;
         right: 0;
+        height: 60px;
         background-color: #BACEE0;
         padding: 10px 20px;
         box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+        z-index: 10;  /* 채팅박스보다 위에 표시 */
     }}
+    /* 입력창 안의 텍스트 필드 높이 맞추기 */
     .stTextInput > div > div > input {{
-        height: 38px;
+        height: 40px;
         width: 100%;
     }}
+    /* 전송 버튼 높이/너비 맞추기 */
     .stButton button {{
-        height: 38px !important;
+        height: 40px !important;
         width: 70px !important;
         padding: 0 10px;
         margin-right: 0 !important;
@@ -197,7 +229,9 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-# → chat-box 영역 시작
+# ------------------------------------------------------------
+# 6) 채팅 메시지를 보여주는 영역 시작
+# ------------------------------------------------------------
 st.markdown('<div class="chat-box">', unsafe_allow_html=True)
 
 def send_message():
@@ -206,6 +240,7 @@ def send_message():
         st.session_state.chat_history.append(
             {"role": "user", "content": user_message}
         )
+        # 외부 API 호출
         completion_request = {
             "messages": st.session_state.chat_history,
             "topP": 0.8,
@@ -220,7 +255,7 @@ def send_message():
         completion_executor.execute(completion_request)
         st.session_state.input_message = ""
 
-# 메시지 출력 (초기 3개 이후부터)
+# 초기 3개 메시지 이후부터 화면에 렌더링
 for message in st.session_state.chat_history[3:]:
     role = "User" if message["role"] == "user" else "Chatbot"
     profile_url = selected_image if role == "Chatbot" else None
@@ -244,10 +279,12 @@ for message in st.session_state.chat_history[3:]:
             </div>
         ''', unsafe_allow_html=True)
 
-# → chat-box 영역 닫기
+# 채팅박스 닫기
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 입력창 및 전송 버튼 (고정)
+# ------------------------------------------------------------
+# 7) 입력창 및 전송 버튼 (항상 화면 맨 아래에 고정)
+# ------------------------------------------------------------
 st.markdown('<div class="input-container">', unsafe_allow_html=True)
 with st.form(key="input_form", clear_on_submit=True):
     cols = st.columns([7.5, 1])
