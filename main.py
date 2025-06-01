@@ -19,24 +19,23 @@ image_urls = [
 # 처음 실행 시, 이미지 선택을 한 번만 실행하도록 설정
 if "selected_image" not in st.session_state:
     st.session_state.selected_image = random.choice(image_urls)
-
 selected_image = st.session_state.selected_image
 
-# Streamlit의 세션 상태를 사용하여 대화 내용을 저장
+# 세션 상태에 대화 기록 저장
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = [
         {
-            'role': 'user',
-            'content': (
-                '너는 지렁이야. 너의 이름은 너가 알아서 지어. '
-                '너는 내 친구야. 다정한 말투로 대화해. 나에게 친한 말투로 반말을 사용해. '
-                '대화는 2문장 이내로 간단하게 해. 지렁이는 습하고 기름진 땅을 좋아해. '
-                '피부를 통해 산소를 빨아들여. 비가 오면 땅에 흙 속에 산소공급이 잘 이뤄지지 않아 '
-                '숨을 쉬기 위해 땅 밖으로 나와. 하지만 헤매다 흙을 못찾으면 강한 햇볕에 말라 죽기도 해.'
+            "role": "user",
+            "content": (
+                "너는 지렁이야. 너의 이름은 너가 알아서 지어. "
+                "너는 내 친구야. 다정한 말투로 대화해. 나에게 친한 말투로 반말을 사용해. "
+                "대화는 2문장 이내로 간단하게 해. 지렁이는 습하고 기름진 땅을 좋아해. "
+                "피부를 통해 산소를 빨아들여. 비가 오면 땅에 흙 속에 산소공급이 잘 이뤄지지 않아 "
+                "숨을 쉬기 위해 땅 밖으로 나와. 하지만 헤매다 흙을 못찾으면 강한 햇볕에 말라 죽기도 해."
             )
         },
-        {'role': 'assistant', 'content': '알겠어.'},
-        {'role': 'assistant', 'content': '안녕, 나는 지렁이야 나에 대해서 궁금한 것이 있니?'}
+        {"role": "assistant", "content": "알겠어."},
+        {"role": "assistant", "content": "안녕, 나는 지렁이야 나에 대해서 궁금한 것이 있니?"}
     ]
 
 if "input_message" not in st.session_state:
@@ -51,25 +50,25 @@ class CompletionExecutor:
 
     def execute(self, completion_request):
         headers = {
-            'X-NCP-CLOVASTUDIO-API-KEY': self._api_key,
-            'X-NCP-APIGW-API-KEY': self._api_key_primary_val,
-            'X-NCP-CLOVASTUDIO-REQUEST-ID': self._request_id,
-            'Content-Type': 'application/json; charset=utf-8',
-            'Accept': 'text/event-stream'
+            "X-NCP-CLOVASTUDIO-API-KEY": self._api_key,
+            "X-NCP-APIGW-API-KEY": self._api_key_primary_val,
+            "X-NCP-CLOVASTUDIO-REQUEST-ID": self._request_id,
+            "Content-Type": "application/json; charset=utf-8",
+            "Accept": "text/event-stream"
         }
 
         with requests.post(
-            self._host + '/testapp/v1/chat-completions/HCX-003',
+            self._host + "/testapp/v1/chat-completions/HCX-003",
             headers=headers,
             json=completion_request,
             stream=True
         ) as r:
-            response_data = r.content.decode('utf-8')
+            response_data = r.content.decode("utf-8")
             lines = response_data.split("\n")
             json_data = None
             for i, line in enumerate(lines):
                 if line.startswith("event:result"):
-                    next_line = lines[i + 1]  # "data:" 이후의 문자열
+                    next_line = lines[i + 1]  # "data:" 이후의 JSON 문자열
                     json_data = next_line[5:]
                     break
 
@@ -85,32 +84,37 @@ class CompletionExecutor:
                 print("JSON 데이터가 없습니다.")
 
 
-# Initialize the chat bot
+# 챗봇 초기화
 completion_executor = CompletionExecutor(
-    host='https://clovastudio.stream.ntruss.com',
-    api_key='NTA0MjU2MWZlZTcxNDJiY6Yo7+BLuaAQ2B5+PgEazGquXEqiIf8NRhOG34cVQNdq',
-    api_key_primary_val='DilhGClorcZK5OTo1QgdfoDQnBNOkNaNksvlAVFE',
-    request_id='d1950869-54c9-4bb8-988d-6967d113e03f'
+    host="https://clovastudio.stream.ntruss.com",
+    api_key="NTA0MjU2MWZlZTcxNDJiY6Yo7+BLuaAQ2B5+PgEazGquXEqiIf8NRhOG34cVQNdq",
+    api_key_primary_val="DilhGClorcZK5OTo1QgdfoDQnBNOkNaNksvlAVFE",
+    request_id="d1950869-54c9-4bb8-988d-6967d113e03f"
 )
 
-# 제목 표시
+# 타이틀
 st.markdown('<h1 class="title">지렁이 챗봇</h1>', unsafe_allow_html=True)
 
-# 프로필 이미지 URL 정의
-bot_profile_url = selected_image
-
-# 스타일 정의: 채팅박스가 flex container가 되어 위쪽부터 메시지가 쌓이도록 설정
+# 스타일 정의: 채팅 출력 영역에 고정 높이 + 스크롤, 입력창 고정
 st.markdown(f"""
     <style>
+    /* 전체 배경 */
     body, .main, .block-container {{
         background-color: #BACEE0 !important;
+        padding: 0;  /* 불필요한 패딩 제거 */
+        margin: 0;
     }}
+
+    /* 타이틀 */
     .title {{
         font-size: 28px !important;
         font-weight: bold;
         text-align: center;
-        margin-top: 10px;
+        margin: 10px 0 0 0;
+        padding: 0;
     }}
+
+    /* 각 메시지 컨테이너 */
     .message-container {{
         display: flex;
         margin-bottom: 10px;
@@ -118,45 +122,67 @@ st.markdown(f"""
     }}
     .message-user {{
         background-color: #FFEB33 !important;
-        color: black;
+        color: #000;
         text-align: right;
         padding: 10px;
         border-radius: 10px;
         margin-left: auto;
         max-width: 60%;
-        box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+        box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
     }}
     .message-assistant {{
-        background-color: #FFFFFF !important;
+        background-color: #FFF !important;
         text-align: left;
         padding: 10px;
         border-radius: 10px;
         margin-right: auto;
         max-width: 60%;
-        box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+        box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
     }}
     .profile-pic {{
         width: 40px;
         height: 40px;
         border-radius: 50%;
         margin-right: 10px;
+        flex-shrink: 0;
     }}
+
+    /* 채팅 박스: 상단 타이틀 바로 아래부터, 하단 입력창 바로 위까지 공간 차지 */
     .chat-box {{
-        /* flex container로 만들어서 위쪽부터 쌓이도록 처리 */
+        position: absolute;
+        top: 50px;   /* 타이틀 높이(약 40px) + margin 10px */
+        bottom: 60px;/* 입력창 높이(60px) 만큼 위쪽에 위치 */
+        left: 0;
+        right: 0;
+        padding: 20px;
+        overflow-y: auto; /* 스크롤바 보이게 */
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
+    }}
 
-        background-color: #BACEE0 !important;
-        border: none;
-        padding: 20px;
-        border-radius: 10px;
+    /* 스크롤바 디자인(원하면 생략 가능) */
+    .chat-box::-webkit-scrollbar {{
+        width: 6px;
+    }}
+    .chat-box::-webkit-scrollbar-thumb {{
+        background-color: rgba(0,0,0,0.2);
+        border-radius: 3px;
+    }}
+    .chat-box::-webkit-scrollbar-track {{
+        background-color: rgba(255,255,255,0.1);
+    }}
 
-        width: 80%;
-        margin: 20px auto;
-
-        height: 400px;        /* 원하는 높이(px)로 조절하세요 */
-        overflow-y: auto;     /* 내용이 넘치면 세로 스크롤바 표시 */
+    /* 입력창 고정 */
+    .input-container {{
+        position: absolute;
+        height: 60px;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: #BACEE0;
+        padding: 10px 20px;
+        box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
     }}
     .stTextInput > div > div > input {{
         height: 38px;
@@ -165,70 +191,63 @@ st.markdown(f"""
     .stButton button {{
         height: 38px !important;
         width: 70px !important;
-        padding: 0px 10px;
-        margin-right: 0px !important;
-    }}
-    /* 입력창을 하단에 고정 */
-    .input-container {{
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background-color: #BACEE0;
-        padding: 10px;
-        box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+        padding: 0 10px;
+        margin-right: 0 !important;
     }}
     </style>
 """, unsafe_allow_html=True)
 
-# → 채팅 메시지를 담을 박스 시작
+# → chat-box 영역 시작
 st.markdown('<div class="chat-box">', unsafe_allow_html=True)
 
 def send_message():
     if st.session_state.input_message:
         user_message = st.session_state.input_message
-        st.session_state.chat_history.append({"role": "user", "content": user_message})
-
+        st.session_state.chat_history.append(
+            {"role": "user", "content": user_message}
+        )
         completion_request = {
-            'messages': st.session_state.chat_history,
-            'topP': 0.8,
-            'topK': 0,
-            'maxTokens': 256,
-            'temperature': 0.7,
-            'repeatPenalty': 1.2,
-            'stopBefore': [],
-            'includeAiFilters': True,
-            'seed': 0
+            "messages": st.session_state.chat_history,
+            "topP": 0.8,
+            "topK": 0,
+            "maxTokens": 256,
+            "temperature": 0.7,
+            "repeatPenalty": 1.2,
+            "stopBefore": [],
+            "includeAiFilters": True,
+            "seed": 0
         }
         completion_executor.execute(completion_request)
-        st.session_state.input_message = ""  # 입력 필드 비우기
+        st.session_state.input_message = ""
 
-# 대화 내용 표시 (초기 3개 메시지 이후부터)
+# 메시지 출력 (초기 3개 이후부터)
 for message in st.session_state.chat_history[3:]:
     role = "User" if message["role"] == "user" else "Chatbot"
-    profile_url = bot_profile_url if role == "Chatbot" else None
-    message_class = 'message-user' if role == "User" else 'message-assistant'
+    profile_url = selected_image if role == "Chatbot" else None
+    message_class = "message-user" if role == "User" else "message-assistant"
 
     if role == "Chatbot":
         st.markdown(f'''
             <div class="message-container">
-                <img src="{profile_url}" class="profile-pic" alt="프로필 이미지">
+                <img src="{profile_url}" class="profile-pic" alt="프로필 이미지" />
                 <div class="{message_class}">
                     {message["content"]}
                 </div>
-            </div>''', unsafe_allow_html=True)
+            </div>
+        ''', unsafe_allow_html=True)
     else:
         st.markdown(f'''
             <div class="message-container">
                 <div class="{message_class}">
                     {message["content"]}
                 </div>
-            </div>''', unsafe_allow_html=True)
+            </div>
+        ''', unsafe_allow_html=True)
 
-# 채팅 박스 닫기
+# → chat-box 영역 닫기
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 입력창 및 전송 버튼
+# 입력창 및 전송 버튼 (고정)
 st.markdown('<div class="input-container">', unsafe_allow_html=True)
 with st.form(key="input_form", clear_on_submit=True):
     cols = st.columns([7.5, 1])
