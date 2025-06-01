@@ -4,7 +4,7 @@ import json
 import random
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 0) 이미지 리스트와 세션 상태 초기화 (기존 코드에서 가져온 부분 그대로)
+# 0) 이미지 리스트와 CompletionExecutor, 세션 상태 초기화 (원래 코드와 동일)
 # ─────────────────────────────────────────────────────────────────────────────
 image_urls = [
     "https://th.bing.com/th/id/OIG4.sbvsXcpjpETlz2LO_4g6?w=1024&h=1024&rs=1&pid=ImgDetMain",
@@ -44,15 +44,85 @@ if "input_message" not in st.session_state:
 if "copied_chat_history" not in st.session_state:
     st.session_state.copied_chat_history = ""
 
+# CompletionExecutor 클래스 정의 (원래 코드와 동일)
+class CompletionExecutor:
+    def __init__(self, host, api_key, api_key_primary_val, request_id):
+        self._host = host
+        self._api_key = api_key
+        self._api_key_primary_val = api_key_primary_val
+        self._request_id = request_id
+
+    def execute(self, completion_request):
+        headers = {
+            'X-NCP-CLOVASTUDIO-API-KEY': self._api_key,
+            'X-NCP-APIGW-API-KEY': self._api_key_primary_val,
+            'X-NCP-CLOVASTUDIO-REQUEST-ID': self._request_id,
+            'Content-Type': 'application/json; charset=utf-8',
+            'Accept': 'text/event-stream'
+        }
+        with requests.post(
+            self._host + '/testapp/v1/chat-completions/HCX-003',
+            headers=headers,
+            json=completion_request,
+            stream=True
+        ) as r:
+            response_data = r.content.decode('utf-8')
+            lines = response_data.split("\n")
+            json_data = None
+            for i, line in enumerate(lines):
+                if line.startswith("event:result"):
+                    next_line = lines[i + 1]
+                    json_data = next_line[5:]
+                    break
+            if json_data:
+                try:
+                    chat_data = json.loads(json_data)
+                    st.session_state.chat_history.append(
+                        {"role": "assistant", "content": chat_data["message"]["content"]}
+                    )
+                except json.JSONDecodeError as e:
+                    print("JSONDecodeError:", e)
+            else:
+                print("JSON 데이터가 없습니다.")
+
+completion_executor = CompletionExecutor(
+    host='https://clovastudio.stream.ntruss.com',
+    api_key='YOUR_API_KEY_HERE',
+    api_key_primary_val='YOUR_PRIMARY_KEY_HERE',
+    request_id='d1950869-54c9-4bb8-988d-6967d113e03f'
+)
+
 # ─────────────────────────────────────────────────────────────────────────────
-# 1) Streamlit 앱 제목 및 CSS 삽입
+# 1) send_message 함수 정의를 폼 생성부보다 위로 옮깁니다.
+# ─────────────────────────────────────────────────────────────────────────────
+def send_message():
+    if st.session_state.input_message:
+        user_message = st.session_state.input_message
+        st.session_state.chat_history.append({"role": "user", "content": user_message})
+
+        completion_request = {
+            'messages': st.session_state.chat_history,
+            'topP': 0.8,
+            'topK': 0,
+            'maxTokens': 256,
+            'temperature': 0.7,
+            'repeatPenalty': 1.2,
+            'stopBefore': [],
+            'includeAiFilters': True,
+            'seed': 0
+        }
+
+        completion_executor.execute(completion_request)
+        st.session_state.input_message = ""
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 2) Streamlit 앱 제목 및 CSS 삽입
 # ─────────────────────────────────────────────────────────────────────────────
 st.markdown("<h1 class='title'>지렁이 챗봇</h1>", unsafe_allow_html=True)
-
 st.markdown("""
 <style>
   /* ─────────────────────────────────────────────────────────────────────────────
-     1) 전체 배경색 및 기본 여백 제거
+     ─  전체 배경색 및 기본 여백 제거
      ───────────────────────────────────────────────────────────────────────────── */
   body, .main, .block-container {
       background-color: #BACEE0 !important;
@@ -68,16 +138,16 @@ st.markdown("""
   }
 
   /* ─────────────────────────────────────────────────────────────────────────────
-     2) 채팅 출력 영역(chat-box)
+     ─  채팅 출력 영역(chat-box): 절대 위치 고정, 상단/하단 여백 조정, 스크롤 자동
      ───────────────────────────────────────────────────────────────────────────── */
   .chat-box {
       position: absolute;
-      top: 60px;
+      top: 60px;       /* 제목 아래부터 시작 */
       left: 0;
       right: 0;
-      bottom: 60px;
+      bottom: 80px;    /* 입력창 위까지 영역 확보 */
       padding: 20px;
-      overflow-y: auto;
+      overflow-y: auto;         /* 길어지면 스크롤바 생김 */
       background-color: #BACEE0;
   }
   .message-container {
@@ -114,7 +184,7 @@ st.markdown("""
   }
 
   /* ─────────────────────────────────────────────────────────────────────────────
-     3) 채팅 입력 영역(input-container)
+     ─  채팅 입력 영역(input-container): 화면 하단에 고정
      ───────────────────────────────────────────────────────────────────────────── */
   .input-container {
       position: absolute;
@@ -126,7 +196,7 @@ st.markdown("""
       box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
       display: flex;
       align-items: center;
-      height: 60px;
+      height: 80px;    /* 바닥부터 80px 높이 차지 */
   }
   .input-container .stTextInput > div > div > input {
       height: 38px;
@@ -142,41 +212,30 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 2) 채팅 출력 영역을 위한 HTML 래퍼 열기
+# 3) 채팅 출력 영역 (chat-box) 시작
 # ─────────────────────────────────────────────────────────────────────────────
 st.markdown("<div class='chat-box'>", unsafe_allow_html=True)
-
-# ─────────────────────────────────────────────────────────────────────────────
-# 3) 채팅 내역 표시 (role이 "assistant"/"user"인 것만 사용)
-# ─────────────────────────────────────────────────────────────────────────────
 for message in st.session_state.chat_history[3:]:
-    role = message["role"]
-    is_user = (role == "user")
+    is_user = (message["role"] == "user")
     css_class = "message-user" if is_user else "message-assistant"
 
     if is_user:
-        # 사용자 메시지 (노란색 말풍선, 오른쪽 정렬)
         st.markdown(f"""
             <div class="message-container">
                 <div class="{css_class}">{message["content"]}</div>
             </div>
         """, unsafe_allow_html=True)
     else:
-        # 챗봇 메시지 (흰색 말풍선 + 프로필 이미지)
         st.markdown(f"""
             <div class="message-container">
                 <img src="{selected_image}" class="profile-pic" alt="프로필 이미지">
                 <div class="{css_class}">{message["content"]}</div>
             </div>
         """, unsafe_allow_html=True)
-
-# ─────────────────────────────────────────────────────────────────────────────
-# 4) 출력 영역 닫기
-# ─────────────────────────────────────────────────────────────────────────────
 st.markdown("</div>", unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 5) 채팅 입력 영역 (폼) – 화면 하단에 고정되도록 .input-container로 감싸기
+# 4) 채팅 입력 영역 (input-container) – 화면 하단에 고정
 # ─────────────────────────────────────────────────────────────────────────────
 st.markdown("<div class='input-container'>", unsafe_allow_html=True)
 with st.form(key="input_form", clear_on_submit=True):
@@ -184,9 +243,10 @@ with st.form(key="input_form", clear_on_submit=True):
     with cols[0]:
         user_message = st.text_input("", key="input_message", placeholder="메시지를 입력하세요:")
     with cols[1]:
-        submit_button = st.form_submit_button(label="전송", on_click=lambda: send_message())
+        # on_click에 호출할 함수가 이미 정의된 상태여야 하므로, 
+        # lambda 없이 바로 함수 이름만 넘겨도 됩니다.
+        submit_button = st.form_submit_button(label="전송", on_click=send_message)
     with cols[2]:
-        # 복사 버튼 (옵션)
         def copy_chat_history():
             filtered = st.session_state.chat_history[3:]
             text = "\n".join([f"{x['role']}: {x['content']}" for x in filtered])
@@ -196,7 +256,7 @@ with st.form(key="input_form", clear_on_submit=True):
 st.markdown("</div>", unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 6) (선택) 복사된 대화 내용을 아래에 표시하고, 텍스트 영역으로 보여주기
+# 5) (선택) 복사된 대화 내용을 표시하는 영역
 # ─────────────────────────────────────────────────────────────────────────────
 if st.session_state.copied_chat_history:
     st.markdown("<h3>대화 내용 정리</h3>", unsafe_allow_html=True)
@@ -216,27 +276,3 @@ if st.session_state.copied_chat_history:
         }}
         </script>
     """, height=100)
-
-# ─────────────────────────────────────────────────────────────────────────────
-# 7) send_message 함수 정의 부분 (기존 코드 그대로)
-# ─────────────────────────────────────────────────────────────────────────────
-def send_message():
-    if st.session_state.input_message:
-        user_message = st.session_state.input_message
-        st.session_state.chat_history.append({"role": "user", "content": user_message})
-
-        completion_request = {
-            'messages': st.session_state.chat_history,
-            'topP': 0.8,
-            'topK': 0,
-            'maxTokens': 256,
-            'temperature': 0.7,
-            'repeatPenalty': 1.2,
-            'stopBefore': [],
-            'includeAiFilters': True,
-            'seed': 0
-        }
-
-        # CompletionExecutor는 기존 코드에서 가져온 그대로 사용
-        completion_executor.execute(completion_request)
-        st.session_state.input_message = ""
