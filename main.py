@@ -42,9 +42,6 @@ if "chat_history" not in st.session_state:
 if "input_message" not in st.session_state:
     st.session_state.input_message = ""
 
-if "copied_chat_history" not in st.session_state:
-    st.session_state.copied_chat_history = ""
-
 class CompletionExecutor:
     def __init__(self, host, api_key, api_key_primary_val, request_id):
         self._host = host
@@ -68,19 +65,14 @@ class CompletionExecutor:
             stream=True
         ) as r:
             response_data = r.content.decode('utf-8')
-
-            # 데이터를 줄 단위로 나누기
             lines = response_data.split("\n")
-
-            # 필요한 JSON 데이터만 추출
             json_data = None
             for i, line in enumerate(lines):
                 if line.startswith("event:result"):
-                    next_line = lines[i + 1]  # "data:" 이후의 문자열 추출
+                    next_line = lines[i + 1]  # "data:" 이후의 문자열
                     json_data = next_line[5:]
                     break
 
-            # JSON 데이터로 변환
             if json_data:
                 try:
                     chat_data = json.loads(json_data)
@@ -101,13 +93,13 @@ completion_executor = CompletionExecutor(
     request_id='d1950869-54c9-4bb8-988d-6967d113e03f'
 )
 
-# Set the title of the Streamlit app
+# 제목 표시
 st.markdown('<h1 class="title">지렁이 챗봇</h1>', unsafe_allow_html=True)
 
 # 프로필 이미지 URL 정의
-bot_profile_url = selected_image   # 챗봇 프로필 이미지 URL
+bot_profile_url = selected_image
 
-# 스타일 정의 - 채팅창 고정 높이/스크롤 추가
+# 스타일 정의: 채팅박스가 flex container가 되어 위쪽부터 메시지가 쌓이도록 설정
 st.markdown(f"""
     <style>
     body, .main, .block-container {{
@@ -117,7 +109,7 @@ st.markdown(f"""
         font-size: 28px !important;
         font-weight: bold;
         text-align: center;
-        padding-top: 10px;
+        margin-top: 10px;
     }}
     .message-container {{
         display: flex;
@@ -150,16 +142,21 @@ st.markdown(f"""
         margin-right: 10px;
     }}
     .chat-box {{
+        /* flex container로 만들어서 위쪽부터 쌓이도록 처리 */
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+
         background-color: #BACEE0 !important;
         border: none;
         padding: 20px;
         border-radius: 10px;
+
         width: 80%;
         margin: 20px auto;
-        
-        /* 아래 두 줄이 중요합니다: */
-        height: 400px;         /* 채팅창 높이 고정 */
-        overflow-y: auto;      /* 세로 스크롤바 활성화 */
+
+        height: 400px;        /* 원하는 높이(px)로 조절하세요 */
+        overflow-y: auto;     /* 내용이 넘치면 세로 스크롤바 표시 */
     }}
     .stTextInput > div > div > input {{
         height: 38px;
@@ -171,7 +168,7 @@ st.markdown(f"""
         padding: 0px 10px;
         margin-right: 0px !important;
     }}
-    /* 입력창을 하단에 고정하는 스타일 */
+    /* 입력창을 하단에 고정 */
     .input-container {{
         position: fixed;
         bottom: 0;
@@ -184,10 +181,9 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-# → chat-box 영역 시작
+# → 채팅 메시지를 담을 박스 시작
 st.markdown('<div class="chat-box">', unsafe_allow_html=True)
 
-# 콜백 함수 정의
 def send_message():
     if st.session_state.input_message:
         user_message = st.session_state.input_message
@@ -205,15 +201,14 @@ def send_message():
             'seed': 0
         }
         completion_executor.execute(completion_request)
-        st.session_state.input_message = ""  # 입력 필드를 초기화
+        st.session_state.input_message = ""  # 입력 필드 비우기
 
-# 대화 내용 표시 (초기 메시지 이후부터)
+# 대화 내용 표시 (초기 3개 메시지 이후부터)
 for message in st.session_state.chat_history[3:]:
     role = "User" if message["role"] == "user" else "Chatbot"
     profile_url = bot_profile_url if role == "Chatbot" else None
     message_class = 'message-user' if role == "User" else 'message-assistant'
 
-    # 챗봇 프로필만 표시
     if role == "Chatbot":
         st.markdown(f'''
             <div class="message-container">
@@ -230,13 +225,13 @@ for message in st.session_state.chat_history[3:]:
                 </div>
             </div>''', unsafe_allow_html=True)
 
-# chat-box 영역 닫기
+# 채팅 박스 닫기
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 사용자 입력창 및 버튼
+# 입력창 및 전송 버튼
 st.markdown('<div class="input-container">', unsafe_allow_html=True)
 with st.form(key="input_form", clear_on_submit=True):
-    cols = st.columns([7.5, 1])  # 복사 버튼이 필요 없다면 두 칸만 사용해도 됩니다.
+    cols = st.columns([7.5, 1])
     with cols[0]:
         user_message = st.text_input("메시지를 입력하세요:", key="input_message", placeholder="")
     with cols[1]:
