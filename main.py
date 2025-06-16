@@ -4,17 +4,17 @@ import json
 import random
 
 image_urls = [
-    "https://th.bing.com/th/id/OIG4.sbvsXcpjpETlz2LO_4g6?w=1024&h=1024&rs=1&pid=ImgDetMain",
-    "https://th.bing.com/th/id/OIG4.sbvsXcpjpETlz2LO_4g6?w=1024&h=1024&rs=1&pid=ImgDetMain",
-    "https://th.bing.com/th/id/OIG4.fmafTjPZwEX17n9E4H49?pid=ImgGn",
-    "https://th.bing.com/th/id/OIG4.fmafTjPZwEX17n9E4H49?pid=ImgGn",
-    "https://th.bing.com/th/id/OIG4.0ugOUMKI2F1pZFRxpgfU?pid=ImgGn",
-    "https://th.bing.com/th/id/OIG4.0ugOUMKI2F1pZFRxpgfU?pid=ImgGn",
-    "https://th.bing.com/th/id/OIG4.fD.2uF_znryBJ9P_dlkH?pid=ImgGn",
-    "https://th.bing.com/th/id/OIG4.fD.2uF_znryBJ9P_dlkH?pid=ImgGn",
-    "https://th.bing.com/th/id/OIG3.fppMpx_V9bOB3msD.EbQ?w=1024&h=1024&rs=1&pid=ImgDetMain",
-    "https://th.bing.com/th/id/OIG3.dMg4p1gEo.bpqfkgQyQr?w=1024&h=1024&rs=1&pid=ImgDetMain"
+    "https://raw.githubusercontent.com/inkun00/earthworm/main/image/image1.png",
+    "https://raw.githubusercontent.com/inkun00/earthworm/main/image/image2.png",
+    "https://raw.githubusercontent.com/inkun00/earthworm/main/image/image3.png",
+    "https://raw.githubusercontent.com/inkun00/earthworm/main/image/image4.png",
+    "https://raw.githubusercontent.com/inkun00/earthworm/main/image/image5.png",
+    "https://raw.githubusercontent.com/inkun00/earthworm/main/image/image6.png",
+    "https://raw.githubusercontent.com/inkun00/earthworm/main/image/image7.png",
+    "https://raw.githubusercontent.com/inkun00/earthworm/main/image/image8.png",
+    "https://raw.githubusercontent.com/inkun00/earthworm/main/image/image9.png"
 ]
+
 
 # 처음 실행 시, 이미지 선택을 한 번만 실행하도록 설정
 if "selected_image" not in st.session_state:
