@@ -3,6 +3,7 @@ import requests
 import json
 import random
 
+# Github RAW 이미지 사용
 image_urls = [
     "https://raw.githubusercontent.com/inkun00/earthworm/main/image/image1.png",
     "https://raw.githubusercontent.com/inkun00/earthworm/main/image/image2.png",
@@ -14,7 +15,6 @@ image_urls = [
     "https://raw.githubusercontent.com/inkun00/earthworm/main/image/image8.png",
     "https://raw.githubusercontent.com/inkun00/earthworm/main/image/image9.png"
 ]
-
 
 # 처음 실행 시, 이미지 선택을 한 번만 실행하도록 설정
 if "selected_image" not in st.session_state:
@@ -61,39 +61,43 @@ class CompletionExecutor:
             'Accept': 'text/event-stream'
         }
 
-        with requests.post(
+        # stream=False로 설정
+        r = requests.post(
             self._host + '/testapp/v1/chat-completions/HCX-003',
             headers=headers,
             json=completion_request,
-            stream=True
-        ) as r:
-            response_data = r.content.decode('utf-8')
+            stream=False
+        )
+        response_data = r.content.decode('utf-8')
 
-            # 데이터를 줄 단위로 나누기
-            lines = response_data.split("\n")
+        # 데이터에서 result JSON 추출
+        lines = response_data.split("\n")
+        json_data = None
+        for i, line in enumerate(lines):
+            if line.startswith("event:result"):
+                next_line = lines[i + 1]  # "data:" 이후의 문자열 추출
+                json_data = next_line[5:]
+                break
+            # 스트림을 사용하지 않을 경우 바로 data 라인이 있을 수도 있음
+            if line.startswith("data:"):
+                json_data = line[5:]
+                break
 
-            # 필요한 JSON 데이터만 추출
-            json_data = None
-            for i, line in enumerate(lines):
-                if line.startswith("event:result"):
-                    next_line = lines[i + 1]  # "data:" 이후의 문자열 추출
-                    json_data = next_line[5:]
-                    break
+        # JSON 데이터로 변환
+        if json_data:
+            try:
+                chat_data = json.loads(json_data)
+                st.session_state.chat_history.append(
+                    {"role": "assistant", "content": chat_data["message"]["content"]}
+                )
+                # 답변 추가 후 강제 rerun!
+                st.experimental_rerun()
+            except json.JSONDecodeError as e:
+                print("JSONDecodeError:", e)
+        else:
+            print("JSON 데이터가 없습니다.")
 
-            # JSON 데이터로 변환
-            if json_data:
-                try:
-                    chat_data = json.loads(json_data)
-                    st.session_state.chat_history.append(
-                        {"role": "assistant", "content": chat_data["message"]["content"]}
-                    )
-                except json.JSONDecodeError as e:
-                    print("JSONDecodeError:", e)
-            else:
-                print("JSON 데이터가 없습니다.")
-
-
-# Initialize the chat bot
+# 챗봇 초기화
 completion_executor = CompletionExecutor(
     host='https://clovastudio.stream.ntruss.com',
     api_key='NTA0MjU2MWZlZTcxNDJiY6Yo7+BLuaAQ2B5+PgEazGquXEqiIf8NRhOG34cVQNdq',
@@ -105,9 +109,9 @@ completion_executor = CompletionExecutor(
 st.markdown('<h1 class="title">지렁이와 대화나누기</h1>', unsafe_allow_html=True)
 
 # 프로필 이미지 URL 정의
-bot_profile_url = selected_image   # 챗봇 프로필 이미지 URL
+bot_profile_url = selected_image
 
-# 스타일 정의 - 전체 페이지에 배경색 강제 적용, 불필요한 경계선 제거
+# 스타일 정의
 st.markdown(f"""
     <style>
     body, .main, .block-container {{
@@ -151,7 +155,7 @@ st.markdown(f"""
     }}
     .chat-box {{
         background-color: #BACEE0 !important;
-        border: none;  /* 불필요한 경계선 제거 */
+        border: none;
         padding: 20px;
         border-radius: 10px;
         max-height: 400px;
@@ -169,7 +173,6 @@ st.markdown(f"""
         padding: 0px 10px;
         margin-right: 0px !important;
     }}
-    /* 입력창을 하단에 고정하는 스타일 */
     .input-container {{
         position: fixed;
         bottom: 0;
@@ -182,38 +185,15 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-# → chat-box 영역 시작
+# chat-box 영역 시작
 st.markdown('<div class="chat-box">', unsafe_allow_html=True)
 
-# 콜백 함수 정의
-def send_message():
-    if st.session_state.input_message:
-        user_message = st.session_state.input_message
-        st.session_state.chat_history.append({"role": "user", "content": user_message})
-
-        completion_request = {
-            'messages': st.session_state.chat_history,
-            'topP': 0.8,
-            'topK': 0,
-            'maxTokens': 256,
-            'temperature': 0.7,
-            'repeatPenalty': 1.2,
-            'stopBefore': [],
-            'includeAiFilters': True,
-            'seed': 0
-        }
-
-        completion_executor.execute(completion_request)
-        st.session_state.input_message = ""  # 입력 필드를 초기화
-
-# 대화 내용 표시 (초기 메시지 이후부터)
+# 메시지 출력
 for message in st.session_state.chat_history[3:]:
-    # 불필요한 키워드 필터 삭제 (연령 관련 메시지가 없으므로 따로 걸러주는 부분도 제거)
     role = "User" if message["role"] == "user" else "Chatbot"
     profile_url = bot_profile_url if role == "Chatbot" else None
     message_class = 'message-user' if role == "User" else 'message-assistant'
 
-    # 챗봇 프로필만 표시
     if role == "Chatbot":
         st.markdown(f'''
             <div class="message-container">
@@ -236,24 +216,40 @@ st.markdown('</div>', unsafe_allow_html=True)
 # 사용자 입력창 및 버튼
 st.markdown('<div class="input-container">', unsafe_allow_html=True)
 with st.form(key="input_form", clear_on_submit=True):
-    cols = st.columns([7.5, 1, 1])  # 입력창의 길이를 적절히 조정
+    cols = st.columns([7.5, 1, 1])
     with cols[0]:
         user_message = st.text_input("메시지를 입력하세요:", key="input_message", placeholder="")
     with cols[1]:
+        def send_message():
+            if st.session_state.input_message:
+                user_message = st.session_state.input_message
+                st.session_state.chat_history.append({"role": "user", "content": user_message})
+
+                completion_request = {
+                    'messages': st.session_state.chat_history,
+                    'topP': 0.8,
+                    'topK': 0,
+                    'maxTokens': 256,
+                    'temperature': 0.7,
+                    'repeatPenalty': 1.2,
+                    'stopBefore': [],
+                    'includeAiFilters': True,
+                    'seed': 0
+                }
+                completion_executor.execute(completion_request)
+                st.session_state.input_message = ""  # 입력 필드를 초기화
         submit_button = st.form_submit_button(label="전송", on_click=send_message)
     with cols[2]:
-        # 복사 버튼이 필요 없으면 이 부분을 통째로 제거해도 됩니다.
         def copy_chat_history():
             filtered_chat_history = [
                 msg for msg in st.session_state.chat_history[3:]
             ]
             chat_history_text = "\n".join([f"{msg['role']}: {msg['content']}" for msg in filtered_chat_history])
             st.session_state.copied_chat_history = chat_history_text
-
         copy_button = st.form_submit_button(label="복사", on_click=copy_chat_history)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 복사된 대화 내용을 아래에 표시 (필요 없으면 삭제 가능)
+# 복사된 대화 내용을 아래에 표시
 if st.session_state.copied_chat_history:
     st.markdown("<h3>대화 내용 정리</h3>", unsafe_allow_html=True)
     st.text_area("", value=st.session_state.copied_chat_history, height=200, key="copied_chat_history_text_area")
