@@ -102,7 +102,7 @@ completion_executor = CompletionExecutor(
 )
 
 # Set the title of the Streamlit app
-st.markdown('<h1 class="title">지렁이와 대화나누기(신강후 메롱)</h1>', unsafe_allow_html=True)
+st.markdown('<h1 class="title">지렁이와 대화나누기</h1>', unsafe_allow_html=True)
 
 # 프로필 이미지 URL 정의
 bot_profile_url = selected_image   # 챗봇 프로필 이미지 URL
