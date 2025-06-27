@@ -149,12 +149,14 @@ with st.form("input_form", clear_on_submit=True):
     copy = st.form_submit_button("복사")
 st.markdown('</div>', unsafe_allow_html=True)
 
-# “전송” 버튼이 눌리면 한 번만 실행
+# ——————————————
+# “전송” 처리: 중복 건너뛰기 + rerun() 호출
+# ——————————————
 if send and user_input:
-    # 유저 메시지 추가
+    # 1) 유저 메시지 추가
     st.session_state.chat_history.append({"role": "user", "content": user_input})
 
-    # API 요청
+    # 2) API 요청
     req = {
         'messages': st.session_state.chat_history,
         'topP': 0.8,
@@ -166,21 +168,32 @@ if send and user_input:
         'includeAiFilters': True,
         'seed': 0
     }
-    assistant_text = completion_executor.execute(req)
+    assistant_text = completion_executor.execute(req).strip()
 
-    # 어시스턴트 메시지 추가
-    st.session_state.chat_history.append({"role": "assistant", "content": assistant_text})
+    # 3) 중복 체크: 바로 이전 어시스턴트 메시지와 같으면 건너뛰기
+    last_assistant = None
+    for m in reversed(st.session_state.chat_history[:-1]):
+        if m["role"] == "assistant":
+            last_assistant = m["content"].strip()
+            break
 
-    # 전체 리로드
+    if assistant_text and assistant_text != last_assistant:
+        st.session_state.chat_history.append({"role": "assistant", "content": assistant_text})
+
+    # 4) 페이지 재실행
     st.rerun()
 
-# “복사” 버튼 처리
+# ——————————————
+# “복사” 처리
+# ——————————————
 if copy:
     lines = st.session_state.chat_history[3:]
     text = "\n".join(f'{m["role"]}: {m["content"]}' for m in lines)
     st.session_state.copied_chat_history = text
 
+# ——————————————
 # 복사된 대화 내용 표시
+# ——————————————
 if st.session_state.copied_chat_history:
     st.markdown("<h3>대화 내용 정리</h3>", unsafe_allow_html=True)
     st.text_area("", value=st.session_state.copied_chat_history, height=200)
