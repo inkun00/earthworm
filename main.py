@@ -172,7 +172,7 @@ if send and user_input:
     st.session_state.chat_history.append({"role": "assistant", "content": assistant_text})
 
     # 전체 리로드
-    st.experimental_rerun()
+    st.rerun()
 
 # “복사” 버튼 처리
 if copy:
