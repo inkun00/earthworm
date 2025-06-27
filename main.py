@@ -41,8 +41,6 @@ if "chat_history" not in st.session_state:
         {'role': 'assistant', 'content': '안녕, 나는 지렁이야 나에 대해서 궁금한 것이 있니?'}
     ]
 
-if "input_message" not in st.session_state:
-    st.session_state.input_message = ""
 if "copied_chat_history" not in st.session_state:
     st.session_state.copied_chat_history = ""
 
@@ -101,7 +99,6 @@ completion_executor = CompletionExecutor(
 # ——————————————
 st.markdown('<h1 class="title">지렁이와 대화나누기</h1>', unsafe_allow_html=True)
 
-# (원본 그대로 스타일 정의)
 st.markdown(f"""
     <style>
     body, .main, .block-container {{ background-color: #BACEE0 !important; }}
@@ -143,19 +140,21 @@ for msg in st.session_state.chat_history[3:]:
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ——————————————
-# 입력창 및 버튼 (콜백 없이 단순화)
+# 입력창 및 버튼
 # ——————————————
 st.markdown('<div class="input-container">', unsafe_allow_html=True)
 with st.form("input_form", clear_on_submit=True):
     user_input = st.text_input("메시지를 입력하세요:", key="input_message")
     send = st.form_submit_button("전송")
     copy = st.form_submit_button("복사")
+st.markdown('</div>', unsafe_allow_html=True)
 
 # “전송” 버튼이 눌리면 한 번만 실행
-if send and st.session_state.input_message.strip():
-    user_msg = st.session_state.input_message.strip()
-    st.session_state.chat_history.append({"role": "user", "content": user_msg})
+if send and user_input:
+    # 유저 메시지 추가
+    st.session_state.chat_history.append({"role": "user", "content": user_input})
 
+    # API 요청
     req = {
         'messages': st.session_state.chat_history,
         'topP': 0.8,
@@ -168,10 +167,11 @@ if send and st.session_state.input_message.strip():
         'seed': 0
     }
     assistant_text = completion_executor.execute(req)
+
+    # 어시스턴트 메시지 추가
     st.session_state.chat_history.append({"role": "assistant", "content": assistant_text})
-    # 입력창 초기화
-    st.session_state.input_message = ""
-    # 페이지 전체 리로드
+
+    # 전체 리로드
     st.experimental_rerun()
 
 # “복사” 버튼 처리
@@ -180,11 +180,7 @@ if copy:
     text = "\n".join(f'{m["role"]}: {m["content"]}' for m in lines)
     st.session_state.copied_chat_history = text
 
-st.markdown('</div>', unsafe_allow_html=True)
-
-# ——————————————
 # 복사된 대화 내용 표시
-# ——————————————
 if st.session_state.copied_chat_history:
     st.markdown("<h3>대화 내용 정리</h3>", unsafe_allow_html=True)
     st.text_area("", value=st.session_state.copied_chat_history, height=200)
