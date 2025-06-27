@@ -175,7 +175,7 @@ with st.form(key="input_form", clear_on_submit=True):
                 )
                 # 5) 입력 초기화 및 다시 그리기
                 st.session_state.input_message = ""
-                st.experimental_rerun()
+                st.rerun()
 
         st.form_submit_button(label="전송", on_click=send_message)
     with cols[2]:
