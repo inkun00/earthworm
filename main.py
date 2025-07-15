@@ -125,9 +125,10 @@ st.markdown(
     .chat-box { background-color: #BACEE0; border: none; padding: 20px;
         border-radius: 10px; max-height: 400px; overflow-y: scroll; margin: 0 auto; width: 80%; }
     .stTextInput > div > div > input { height: 38px; width: 100%; }
-    .stButton button { height: 38px; width: 70px; padding: 0 10px; }
     .input-container { position: fixed; bottom: 0; left: 0; width: 100%;
         background-color: #BACEE0; padding: 10px; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); }
+    .button-row { display: flex; gap: 10px; }
+    .stButton button { height: 38px; width: 70px; padding: 0 10px; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -160,15 +161,16 @@ for msg in st.session_state.chat_history[3:]:  # 초기 설정 3줄은 숨김
 st.markdown("</div>", unsafe_allow_html=True)
 
 # --------------------------------------------------
-# 입력창 및 버튼
+# 입력창 및 버튼 (한 줄에 두 버튼)
 # --------------------------------------------------
 st.markdown('<div class="input-container">', unsafe_allow_html=True)
 with st.form("input_form", clear_on_submit=True):
     user_input = st.text_input("메시지를 입력하세요:", key="input_message")
-    col1, col2 = st.columns([1, 1])
-    with col1:
+    # 버튼을 한 줄(행)에 나란히 배치
+    button_col1, button_col2 = st.columns([1, 1])
+    with button_col1:
         send = st.form_submit_button("전송")
-    with col2:
+    with button_col2:
         copy = st.form_submit_button("복사")
 st.markdown("</div>", unsafe_allow_html=True)
 
