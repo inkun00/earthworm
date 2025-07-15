@@ -32,7 +32,10 @@ if "chat_history" not in st.session_state:
             ),
         },
         {"role": "assistant", "content": "알겠어."},
-        {"role": "assistant", "content": "안녕! 나는 지렁이야. 궁금한 거 있니?"},
+        {
+            "role": "assistant",
+            "content": "안녕! 나는 지렁이야. 궁금한 거 있니?",
+        },
     ]
 
 if "copied_chat_history" not in st.session_state:
@@ -68,22 +71,28 @@ class CompletionExecutor:
         for raw_line in r.iter_lines(decode_unicode=True):
             if not raw_line:
                 continue
-            if not raw_line.startswith("data:"):
+            line = raw_line.strip()
+            if not line.startswith("data:"):
                 continue
-            data_str = raw_line[5:].strip()
+            data_str = line[5:].strip()
             if data_str == "[DONE]":
                 break
+
             try:
                 chunk = json.loads(data_str)
             except json.JSONDecodeError:
                 continue
+
             delta = chunk.get("message", {}).get("content", "")
+            # **중복 방지 핵심 부분**
             if delta:
-                # 새로 추가된 부분만 누적
+                # delta 가 이미 full_response를 포함한 누적형이라면,
+                # 새로 추가된 부분만 붙인다.
                 if delta.startswith(full_response):
                     full_response = delta
                 else:
                     full_response += delta
+
         return full_response.strip()
 
 
@@ -104,7 +113,7 @@ st.markdown(
     """
     <style>
     body, .main, .block-container { background-color: #BACEE0 !important; }
-    .title { font-size: 28px; font-weight: bold; text-align: center; padding-top: 10px; }
+    .title { font-size: 28px !important; font-weight: bold; text-align: center; padding-top: 10px; }
     .message-container { display: flex; margin-bottom: 10px; align-items: center; }
     .message-user { background-color: #FFEB33; color: black; text-align: right;
         padding: 10px; border-radius: 10px; margin-left: auto; max-width: 60%;
@@ -115,13 +124,10 @@ st.markdown(
     .profile-pic { width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; }
     .chat-box { background-color: #BACEE0; border: none; padding: 20px;
         border-radius: 10px; max-height: 400px; overflow-y: scroll; margin: 0 auto; width: 80%; }
-    .stTextInput > div > div > input { height: 38px; }
-    .stButton button { height: 38px; width: 70px; }
-    /* ▼▼ 두 버튼을 flex 로 묶어서 gap 10px 적용 */
-    .form-buttons { display: flex; justify-content: center; gap: 10px; margin-top: 10px; }
+    .stTextInput > div > div > input { height: 38px; width: 100%; }
+    .stButton button { height: 38px; width: 70px; padding: 0 10px; }
     .input-container { position: fixed; bottom: 0; left: 0; width: 100%;
         background-color: #BACEE0; padding: 10px; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); }
-    div[data-testid="column"] > div.stButton { margin-right: 10px; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -133,19 +139,22 @@ st.markdown('<h1 class="title">지렁이와 대화나누기</h1>', unsafe_allow_
 # 대화 내역 표시
 # --------------------------------------------------
 st.markdown('<div class="chat-box">', unsafe_allow_html=True)
-for msg in st.session_state.chat_history[3:]:
+for msg in st.session_state.chat_history[3:]:  # 초기 설정 3줄은 숨김
     if msg["role"] == "user":
         st.markdown(
-            f'<div class="message-container"><div class="message-user">{msg["content"]}</div></div>',
+            f"""
+            <div class="message-container">
+                <div class="message-user">{msg['content']}</div>
+            </div>""",
             unsafe_allow_html=True,
         )
     else:
         st.markdown(
-            f'''
+            f"""
             <div class="message-container">
                 <img src="{bot_profile_url}" class="profile-pic" alt="프로필">
-                <div class="message-assistant">{msg["content"]}</div>
-            </div>''',
+                <div class="message-assistant">{msg['content']}</div>
+            </div>""",
             unsafe_allow_html=True,
         )
 st.markdown("</div>", unsafe_allow_html=True)
@@ -156,19 +165,21 @@ st.markdown("</div>", unsafe_allow_html=True)
 st.markdown('<div class="input-container">', unsafe_allow_html=True)
 with st.form("input_form", clear_on_submit=True):
     user_input = st.text_input("메시지를 입력하세요:", key="input_message")
-    # ---- 버튼을 flex 컨테이너 안에 배치 ----
-    st.markdown('<div class="form-buttons">', unsafe_allow_html=True)
-    send = st.form_submit_button("전송")
-    copy = st.form_submit_button("복사")
-    st.markdown('</div>', unsafe_allow_html=True)
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        send = st.form_submit_button("전송")
+    with col2:
+        copy = st.form_submit_button("복사")
 st.markdown("</div>", unsafe_allow_html=True)
 
 # --------------------------------------------------
 # '전송' 처리
 # --------------------------------------------------
 if send and user_input:
+    # 1) 유저 메시지 저장
     st.session_state.chat_history.append({"role": "user", "content": user_input})
 
+    # 2) API 요청
     req = {
         "messages": st.session_state.chat_history,
         "topP": 0.8,
@@ -182,22 +193,27 @@ if send and user_input:
     }
     assistant_text = completion_executor.execute(req)
 
-    def _norm(t): return re.sub(r"\s+", " ", t.strip())
+    # 3) 직전 어시스턴트 메시지와 비교(공백 무시)
+    def _norm(text):
+        return re.sub(r"\s+", " ", text.strip())
+
     last_assistant = next(
         (m["content"] for m in reversed(st.session_state.chat_history[:-1]) if m["role"] == "assistant"),
         "",
     )
+
     if assistant_text and _norm(assistant_text) != _norm(last_assistant):
         st.session_state.chat_history.append({"role": "assistant", "content": assistant_text})
+
+    # 4) 새로고침
     st.rerun()
 
 # --------------------------------------------------
 # '복사' 처리
 # --------------------------------------------------
 if copy:
-    st.session_state.copied_chat_history = "\n".join(
-        f"{m['role']}: {m['content']}" for m in st.session_state.chat_history[3:]
-    )
+    lines = st.session_state.chat_history[3:]
+    st.session_state.copied_chat_history = "\n".join(f"{m['role']}: {m['content']}" for m in lines)
 
 # --------------------------------------------------
 # 복사된 대화 내용 표시
