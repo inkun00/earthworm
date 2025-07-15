@@ -84,10 +84,7 @@ class CompletionExecutor:
                 continue
 
             delta = chunk.get("message", {}).get("content", "")
-            # **중복 방지 핵심 부분**
             if delta:
-                # delta 가 이미 full_response를 포함한 누적형이라면,
-                # 새로 추가된 부분만 붙인다.
                 if delta.startswith(full_response):
                     full_response = delta
                 else:
@@ -107,7 +104,7 @@ completion_executor = CompletionExecutor(
 )
 
 # --------------------------------------------------
-# 페이지 스타일
+# 페이지 스타일 (버튼간 간격 추가 보정)
 # --------------------------------------------------
 st.markdown(
     """
@@ -127,8 +124,8 @@ st.markdown(
     .stTextInput > div > div > input { height: 38px; width: 100%; }
     .input-container { position: fixed; bottom: 0; left: 0; width: 100%;
         background-color: #BACEE0; padding: 10px; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); }
-    .button-row { display: flex; gap: 10px; }
-    .stButton button { height: 38px; width: 70px; padding: 0 10px; }
+    div[data-testid="column"] { padding-left: 2px !important; padding-right: 2px !important; } /* 버튼간 여백 최소화 */
+    .stButton button { height: 38px; width: 70px; padding: 0 10px; margin: 0 2px !important;}
     </style>
     """,
     unsafe_allow_html=True,
@@ -140,7 +137,7 @@ st.markdown('<h1 class="title">지렁이와 대화나누기</h1>', unsafe_allow_
 # 대화 내역 표시
 # --------------------------------------------------
 st.markdown('<div class="chat-box">', unsafe_allow_html=True)
-for msg in st.session_state.chat_history[3:]:  # 초기 설정 3줄은 숨김
+for msg in st.session_state.chat_history[3:]:
     if msg["role"] == "user":
         st.markdown(
             f"""
@@ -161,16 +158,16 @@ for msg in st.session_state.chat_history[3:]:  # 초기 설정 3줄은 숨김
 st.markdown("</div>", unsafe_allow_html=True)
 
 # --------------------------------------------------
-# 입력창 및 버튼 (한 줄에 두 버튼)
+# 입력창 및 버튼 (간격 최소화)
 # --------------------------------------------------
 st.markdown('<div class="input-container">', unsafe_allow_html=True)
 with st.form("input_form", clear_on_submit=True):
     user_input = st.text_input("메시지를 입력하세요:", key="input_message")
-    # 버튼을 한 줄(행)에 나란히 배치
-    button_col1, button_col2 = st.columns([1, 1])
-    with button_col1:
+    # 버튼을 거의 딱 붙이기 위해 컬럼 폭과 패딩을 최소로
+    col1, col2 = st.columns([1, 1], gap="small")
+    with col1:
         send = st.form_submit_button("전송")
-    with button_col2:
+    with col2:
         copy = st.form_submit_button("복사")
 st.markdown("</div>", unsafe_allow_html=True)
 
@@ -178,10 +175,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 # '전송' 처리
 # --------------------------------------------------
 if send and user_input:
-    # 1) 유저 메시지 저장
     st.session_state.chat_history.append({"role": "user", "content": user_input})
-
-    # 2) API 요청
     req = {
         "messages": st.session_state.chat_history,
         "topP": 0.8,
@@ -195,19 +189,14 @@ if send and user_input:
     }
     assistant_text = completion_executor.execute(req)
 
-    # 3) 직전 어시스턴트 메시지와 비교(공백 무시)
     def _norm(text):
         return re.sub(r"\s+", " ", text.strip())
-
     last_assistant = next(
         (m["content"] for m in reversed(st.session_state.chat_history[:-1]) if m["role"] == "assistant"),
         "",
     )
-
     if assistant_text and _norm(assistant_text) != _norm(last_assistant):
         st.session_state.chat_history.append({"role": "assistant", "content": assistant_text})
-
-    # 4) 새로고침
     st.rerun()
 
 # --------------------------------------------------
