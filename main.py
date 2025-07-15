@@ -121,6 +121,7 @@ st.markdown(
     .form-buttons { display: flex; justify-content: center; gap: 10px; margin-top: 10px; }
     .input-container { position: fixed; bottom: 0; left: 0; width: 100%;
         background-color: #BACEE0; padding: 10px; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); }
+    div[data-testid="column"] > div.stButton { margin-right: 10px; }
     </style>
     """,
     unsafe_allow_html=True,
