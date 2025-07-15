@@ -103,7 +103,7 @@ completion_executor = CompletionExecutor(
 )
 
 # --------------------------------------------------
-# 페이지 스타일 (버튼 밀착)
+# 페이지 스타일 (버튼 간격 최소화)
 # --------------------------------------------------
 st.markdown(
     """
@@ -123,8 +123,8 @@ st.markdown(
     .stTextInput > div > div > input { height: 38px; width: 100%; }
     .input-container { position: fixed; bottom: 0; left: 0; width: 100%;
         background-color: #BACEE0; padding: 10px; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); }
-    .stForm .stFormSubmitButton {display: flex !important; flex-direction: row !important; gap: 0 !important;}
-    button[kind="secondary"] {margin-left: 0px !important;}
+    div[data-testid="column"] { padding-left: 2px !important; padding-right: 2px !important; }
+    .stButton button { height: 38px; width: 70px; padding: 0 10px; margin: 0 !important;}
     </style>
     """,
     unsafe_allow_html=True,
@@ -157,15 +157,15 @@ for msg in st.session_state.chat_history[3:]:
 st.markdown("</div>", unsafe_allow_html=True)
 
 # --------------------------------------------------
-# 입력창 및 버튼 (한 컬럼에 두 버튼! 완전 붙음)
+# 입력창 및 버튼 (가로로 한 줄, 딱 붙여서!)
 # --------------------------------------------------
 st.markdown('<div class="input-container">', unsafe_allow_html=True)
 with st.form("input_form", clear_on_submit=True):
     user_input = st.text_input("메시지를 입력하세요:", key="input_message")
-    # 한 컬럼에 두 버튼 연속 배치!
-    col = st.columns(1)
-    with col[0]:
+    col1, col2 = st.columns([1, 1])
+    with col1:
         send = st.form_submit_button("전송")
+    with col2:
         copy = st.form_submit_button("복사")
 st.markdown("</div>", unsafe_allow_html=True)
 
