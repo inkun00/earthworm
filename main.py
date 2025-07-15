@@ -92,7 +92,6 @@ class CompletionExecutor:
 
         return full_response.strip()
 
-
 # --------------------------------------------------
 # 클로바 스튜디오 실행기
 # --------------------------------------------------
@@ -104,7 +103,7 @@ completion_executor = CompletionExecutor(
 )
 
 # --------------------------------------------------
-# 페이지 스타일 (버튼간 간격 추가 보정)
+# 페이지 스타일
 # --------------------------------------------------
 st.markdown(
     """
@@ -124,8 +123,8 @@ st.markdown(
     .stTextInput > div > div > input { height: 38px; width: 100%; }
     .input-container { position: fixed; bottom: 0; left: 0; width: 100%;
         background-color: #BACEE0; padding: 10px; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); }
-    div[data-testid="column"] { padding-left: 2px !important; padding-right: 2px !important; } /* 버튼간 여백 최소화 */
-    .stButton button { height: 38px; width: 70px; padding: 0 10px; margin: 0 2px !important;}
+    .button-row-custom {display: flex; gap: 10px; margin-top: 8px;}
+    .button-row-custom button {height: 38px; width: 70px; background: white; border-radius: 8px; border: 1px solid #eee; font-size:16px;}
     </style>
     """,
     unsafe_allow_html=True,
@@ -158,18 +157,37 @@ for msg in st.session_state.chat_history[3:]:
 st.markdown("</div>", unsafe_allow_html=True)
 
 # --------------------------------------------------
-# 입력창 및 버튼 (간격 최소화)
+# 입력창 및 버튼 (같은 줄에, 같은 열에 나란히)
 # --------------------------------------------------
 st.markdown('<div class="input-container">', unsafe_allow_html=True)
 with st.form("input_form", clear_on_submit=True):
     user_input = st.text_input("메시지를 입력하세요:", key="input_message")
-    # 버튼을 거의 딱 붙이기 위해 컬럼 폭과 패딩을 최소로
-    col1, col2 = st.columns([1, 1], gap="small")
-    with col1:
-        send = st.form_submit_button("전송")
-    with col2:
-        copy = st.form_submit_button("복사")
+    # HTML 버튼을 한 행에
+    st.markdown(
+        """
+        <div class="button-row-custom">
+            <button type="submit" name="action" value="send">전송</button>
+            <button type="submit" name="action" value="copy">복사</button>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 st.markdown("</div>", unsafe_allow_html=True)
+
+# --------------------------------------------------
+# 버튼 동작 처리
+# --------------------------------------------------
+# 폼 제출시 어떤 버튼인지 파악
+action = st.session_state.get("input_form_action", None)
+send = False
+copy = False
+
+# Streamlit은 form submit 후 버튼의 value를 세션에 직접 넣어주지 않으므로 workaround 필요
+if st.session_state.get("input_message", "") != "":
+    if st.requested_url_query_params.get("action", [""])[0] == "send":
+        send = True
+    elif st.requested_url_query_params.get("action", [""])[0] == "copy":
+        copy = True
 
 # --------------------------------------------------
 # '전송' 처리
