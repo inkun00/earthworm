@@ -45,7 +45,7 @@ if "copied_chat_history" not in st.session_state:
     st.session_state.copied_chat_history = ""
 
 # ——————————————
-# 스트리밍 응답 합치기용 실행기
+# 스트리밍 응답 합치기용 실행기 (중복 제거 로직 추가)
 # ——————————————
 class CompletionExecutor:
     def __init__(self, host, api_key, api_key_primary_val, request_id):
@@ -70,21 +70,33 @@ class CompletionExecutor:
         )
 
         full_response = ""
+        prev_content = ""
         for raw_line in r.iter_lines(decode_unicode=True):
             if not raw_line:
                 continue
             line = raw_line.strip()
-            if line.startswith("data:"):
-                data_str = line[len("data:"):].strip()
-                if data_str == "[DONE]":
-                    break
-                try:
-                    chunk = json.loads(data_str)
-                    delta = chunk.get("message", {}).get("content", "")
-                    full_response += delta
-                except json.JSONDecodeError:
-                    continue
-        return full_response
+            if not line.startswith("data:"):
+                continue
+
+            data_str = line[len("data:"):].strip()
+            if data_str == "[DONE]":
+                break
+
+            try:
+                chunk = json.loads(data_str)
+                # 이번 청크의 전체 누적 내용
+                content = chunk.get("message", {}).get("content", "")
+                # 이전까지 처리한 부분을 빼고 “새로 추가된 델타”만
+                if content.startswith(prev_content):
+                    delta = content[len(prev_content):]
+                else:
+                    delta = content
+                full_response += delta
+                prev_content = content
+            except json.JSONDecodeError:
+                continue
+
+        return full_response.strip()
 
 # 클로바 스튜디오 실행기
 completion_executor = CompletionExecutor(
@@ -168,15 +180,13 @@ if send and user_input:
         'includeAiFilters': True,
         'seed': 0
     }
-    assistant_text = completion_executor.execute(req).strip()
+    assistant_text = completion_executor.execute(req)
 
-    # 3) 중복 체크: 바로 이전 어시스턴트 메시지와 같으면 건너뛰기
-    last_assistant = None
-    for m in reversed(st.session_state.chat_history[:-1]):
-        if m["role"] == "assistant":
-            last_assistant = m["content"].strip()
-            break
-
+    # 3) 중복 체크: 바로 이전 어시스턴트 메시지와 같지 않을 때만 추가
+    last_assistant = next(
+        (m["content"].strip() for m in reversed(st.session_state.chat_history[:-1]) if m["role"] == "assistant"),
+        None
+    )
     if assistant_text and assistant_text != last_assistant:
         st.session_state.chat_history.append({"role": "assistant", "content": assistant_text})
 
