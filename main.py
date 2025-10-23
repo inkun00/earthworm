@@ -5,13 +5,6 @@ import random
 import re
 
 # --------------------------------------------------
-# 페이지 설정 (가운데 정렬)
-# --------------------------------------------------
-# st.set_page_config는 스크립트 최상단에 한 번만 호출되어야 합니다.
-# (이 코드를 실행하는 메인 파일의 맨 위에 두는 것이 좋습니다.)
-# st.set_page_config(layout="centered") 
-
-# --------------------------------------------------
 # Github RAW 이미지 사용
 # --------------------------------------------------
 image_urls = [
@@ -118,82 +111,71 @@ completion_executor = CompletionExecutor(
     request_id="d1950869-54c9-4bb8-988d-6967d113e03f",
 )
 
-
 # --------------------------------------------------
-# 페이지 스타일 (카카오톡 스타일 - Flexbox 레이아웃 최종)
+# 페이지 스타일 (position: fixed 사용)
 # --------------------------------------------------
 st.markdown(
     """
     <style>
-    /* --- 1. 부모 요소들 높이 100% 강제 --- */
-    html, body, #root, div[data-testid="stAppViewContainer"], .main {
-        height: 100% !important;
-        background-color: #BACEE0 !important; /* 배경색도 확실하게 */
+    /* --- 1. 페이지 전체 배경 --- */
+    body, .main, div[data-testid="stAppViewContainer"] {
+        background-color: #BACEE0 !important;
+    }
+    
+    /* --- 2. 메인 컨텐츠 영역 (가운데 정렬) --- */
+    .block-container {
+        background-color: #BACEE0 !important;
+        /* max-width는 Streamlit 기본값을 따름 */
     }
 
-    /* --- 2. 메인 컨텐츠 영역 (가운데 정렬된) --- */
-    div[data-testid="stAppViewContainer"] > .main .block-container {
-        display: flex;
-        flex-direction: column;
-        height: 100% !important; /* ★ 부모가 100%이니, 자식도 100%로 */
-        
-        /* Streamlit 기본값 덮어쓰기 */
-        padding: 0 !important;
-        margin: 0 auto !important;
-        background-color: #BACEE0 !important; 
-    }
-
-    /* --- 3. (Row 1) 타이틀 --- */
+    /* --- 3. 타이틀 --- */
     .title {
         font-size: 24px !important;
         font-weight: bold;
         text-align: center;
         padding: 15px 10px 10px 10px;
-        background-color: #BACEE0;
-        flex-shrink: 0; /* ★ 높이 고정 */
         color: #000;
-        width: 100%;
-        box-sizing: border-box;
     }
     
-    /* --- 4. (Row 2) 채팅창 --- */
+    /* --- 4. 채팅창 --- */
     .chat-box {
         background-color: #BACEE0;
-        border: none;
         padding: 10px 20px 0 20px;
         width: 100%;
-        flex-grow: 1; /* ★ 남는 공간 모두 차지 */
-        overflow-y: auto; /* ★ 내용 넘치면 스크롤 */
         box-sizing: border-box;
+        
+        /* ★★★ 핵심 ★★★ */
+        /* 화면 높이에서 타이틀, 입력창 높이를 대략 뺀 값 */
+        height: 75vh; 
+        overflow-y: auto; /* ★ 스크롤 */
+        
+        /* ★ 입력창에 가려지지 않도록 하단에 충분한 여백 */
+        padding-bottom: 120px; 
     }
     
-    /* --- 5. (Optional) 복사 영역 --- */
+    /* --- 5. 복사 영역 (채팅창 내부) --- */
     h3[data-testid="stHeading"] {
-        flex-shrink: 0; /* 높이 고정 */
-        padding: 10px 20px 0 20px;
-        background-color: #f7f7f7;
-        margin: 0;
+        padding-top: 10px;
         font-size: 16px;
-        width: 100%;
-        box-sizing: border-box;
-    }
-    div[data-testid="stTextArea"] {
-        flex-shrink: 0; /* 높이 고정 */
-        background-color: #f7f7f7;
-        padding: 10px 20px 10px 20px;
-        width: 100%;
-        box-sizing: border-box;
     }
     div[data-testid="stTextArea"] textarea { 
         height: 150px !important; 
     }
     
-    /* --- 6. (Row 3) 입력창 --- */
+    /* --- 6. 입력창 --- */
     .input-container {
-        flex-shrink: 0; /* ★ 높이 고정 */
-        width: 100%;
+        /* ★★★ 핵심 ★★★ */
+        position: fixed; /* 화면에 고정 */
+        bottom: 0;       /* 화면 맨 아래에 */
+        
+        /* Streamlit의 .block-container 너비와 맞춤 */
+        left: 50%; 
+        transform: translateX(-50%);
+        max-width: 730px; /* Streamlit 기본 centered 너비 */
+        width: 100%;      /* 부모 너비에 맞춤 */
+
         background-color: #FFFFFF;
-        padding: 10px 20px; /* 좌우 여백 */
+        padding: 10px 20px;
         box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
         box-sizing: border-box;
     }
@@ -201,88 +183,32 @@ st.markdown(
         padding: 0 !important;
     }
 
-    /* --- 7. 메시지 말풍선 스타일 (이전과 동일) --- */
-    .message-container {
-        display: flex;
-        margin-bottom: 10px;
-        align-items: flex-start;
-    }
-    .message-user {
-        background-color: #FEE500;
-        color: #3C1E1E;
-        padding: 10px 12px;
-        border-radius: 10px 0px 10px 10px;
-        margin-left: auto;
-        max-width: 65%;
-        box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
-        word-wrap: break-word;
-    }
-    .message-assistant {
-        background-color: #FFFFFF;
-        color: #000000;
-        padding: 10px 12px;
-        border-radius: 0px 10px 10px 10px;
-        margin-right: auto;
-        max-width: 65%;
-        box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
-        word-wrap: break-word;
-    }
-    .profile-pic {
-        width: 40px;
-        height: 40px;
-        border-radius: 15px;
-        margin-right: 10px;
-    }
+    /* --- 7. 메시지 말풍선 스타일 --- */
+    .message-container { display: flex; margin-bottom: 10px; align-items: flex-start; }
+    .message-user { background-color: #FEE500; color: #3C1E1E; padding: 10px 12px; border-radius: 10px 0px 10px 10px; margin-left: auto; max-width: 65%; box-shadow: 2px 2px 5px rgba(0,0,0,0.05); word-wrap: break-word; }
+    .message-assistant { background-color: #FFFFFF; color: #000000; padding: 10px 12px; border-radius: 0px 10px 10px 10px; margin-right: auto; max-width: 65%; box-shadow: 2px 2px 5px rgba(0,0,0,0.05); word-wrap: break-word; }
+    .profile-pic { width: 40px; height: 40px; border-radius: 15px; margin-right: 10px; }
     
-    /* --- 8. 입력 필드/버튼 스타일 (이전과 동일) --- */
-    .stTextInput > div > div > input {
-        height: 38px;
-        width: 100%;
-        background-color: #F5F5F5;
-        border: none;
-        border-radius: 5px;
-        padding-left: 10px;
-    }
-    div[data-testid="column"] {
-        padding-left: 5px !important;
-        padding-right: 5px !important;
-    }
-    .stButton button {
-        height: 38px;
-        width: 100%;
-        padding: 0 10px;
-        margin: 0 !important;
-        background-color: #FEE500;
-        color: #3C1E1E;
-        border: none;
-        border-radius: 5px;
-        font-weight: bold;
-    }
-    .stButton button:hover {
-        background-color: #F0D900;
-        color: #3C1E1E;
-    }
-    div[data-testid="column"]:nth-of-type(3) .stButton button {
-        background-color: #F0F0F0;
-        color: #555;
-    }
-    div[data-testid="column"]:nth-of-type(3) .stButton button:hover {
-        background-color: #E0E0E0;
-        color: #333;
-    }
+    /* --- 8. 입력 필드/버튼 스타일 --- */
+    .stTextInput > div > div > input { height: 38px; width: 100%; background-color: #F5F5F5; border: none; border-radius: 5px; padding-left: 10px; }
+    div[data-testid="column"] { padding-left: 5px !important; padding-right: 5px !important; }
+    .stButton button { height: 38px; width: 100%; padding: 0 10px; margin: 0 !important; background-color: #FEE500; color: #3C1E1E; border: none; border-radius: 5px; font-weight: bold; }
+    .stButton button:hover { background-color: #F0D900; color: #3C1E1E; }
+    div[data-testid="column"]:nth-of-type(3) .stButton button { background-color: #F0F0F0; color: #555; }
+    div[data-testid="column"]:nth-of-type(3) .stButton button:hover { background-color: #E0E0E0; color: #333; }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
 # --------------------------------------------------
-# 페이지 레이아웃 (Flexbox 순서대로)
+# 페이지 레이아웃 (순서 변경)
 # --------------------------------------------------
 
 # --- (Row 1) 타이틀 ---
 st.markdown('<h1 class="title">지렁이와 대화나누기</h1>', unsafe_allow_html=True)
 
-# --- (Row 2) 대화 내역 (flex-grow: 1) ---
+# --- (Row 2) 대화 내역 (스크롤 영역) ---
 st.markdown('<div class="chat-box">', unsafe_allow_html=True)
 for msg in st.session_state.chat_history[3:]:
     if msg["role"] == "user":
@@ -298,23 +224,24 @@ for msg in st.session_state.chat_history[3:]:
             f"""
             <div class="message-container">
                 <img src="{bot_profile_url}" class="profile-pic" alt="프로필">
-                <div class.message-assistant">{msg['content']}</div>
+                <div class="message-assistant">{msg['content']}</div>
             </div>""",
             unsafe_allow_html=True,
         )
-st.markdown("</div>", unsafe_allow_html=True)
 
-# --- (Optional) 복사된 대화 내용 (flex-shrink: 0) ---
+# --- (Moved) 복사된 대화 내용 (채팅창 내부에 표시) ---
 if st.session_state.copied_chat_history:
-    st.markdown("### 대화 내용 정리") # h3 태그
+    st.markdown("### 대화 내용 정리")
     st.text_area(
         "", 
         value=st.session_state.copied_chat_history, 
         height=150, 
         label_visibility="collapsed"
     )
+st.markdown("</div>", unsafe_allow_html=True) # chat-box 닫기
 
-# --- (Row 3) 입력창 (flex-shrink: 0) ---
+
+# --- (Row 3) 입력창 (화면 하단 고정) ---
 st.markdown('<div class="input-container">', unsafe_allow_html=True)
 with st.form("input_form", clear_on_submit=True):
     col1, col2, col3 = st.columns([0.75, 0.125, 0.125])
