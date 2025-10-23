@@ -5,6 +5,13 @@ import random
 import re
 
 # --------------------------------------------------
+# 페이지 설정 (가운데 정렬)
+# --------------------------------------------------
+# st.set_page_config는 스크립트 최상단에 한 번만 호출되어야 합니다.
+# (이 코드를 실행하는 메인 파일의 맨 위에 두는 것이 좋습니다.)
+# st.set_page_config(layout="centered") 
+
+# --------------------------------------------------
 # Github RAW 이미지 사용
 # --------------------------------------------------
 image_urls = [
@@ -117,76 +124,85 @@ completion_executor = CompletionExecutor(
 st.markdown(
     """
     <style>
-    /* --- 전체 배경 --- */
-    body, .main {
+    /* --- 1. 페이지 전체 배경 --- */
+    body, .main, div[data-testid="stAppViewContainer"] {
         background-color: #BACEE0 !important;
     }
 
-    /* --- Streamlit 메인 컨테이너를 Flexbox로 변경 --- */
+    /* --- 2. 메인 컨텐츠 영역 (가운데 정렬된) --- */
     div[data-testid="stAppViewContainer"] > .main .block-container {
         display: flex;
         flex-direction: column;
-        height: 100vh; /* 전체 뷰포트 높이 */
-        padding: 0 !important; /* 스트림릿 기본 패딩 제거 */
-        margin: 0 !important;
-        width: 100% !important;
-        max-width: 100% !important;
+        height: 100vh; /* ★ 화면 전체 높이 */
+        
+        /* Streamlit 기본값 덮어쓰기 */
+        padding: 0 !important;
+        margin: 0 auto !important; /* 가운데 정렬 유지 */
+        
+        /* 앱 내부 배경색도 동일하게 */
+        background-color: #BACEE0 !important; 
     }
 
-    /* --- 타이틀 --- */
+    /* --- 3. (Row 1) 타이틀 --- */
     .title {
         font-size: 24px !important;
         font-weight: bold;
         text-align: center;
         padding: 15px 10px 10px 10px;
-        background-color: #BACEE0; /* 배경색 통일 */
-        flex-shrink: 0; /* 높이 고정 (줄어들지 않음) */
+        background-color: #BACEE0; /* 배경색과 동일 */
+        flex-shrink: 0; /* ★ 높이 고정 */
         color: #000;
-    }
-    
-    /* --- 채팅 메시지 영역 --- */
-    .chat-box {
-        background-color: #BACEE0;
-        border: none;
-        padding: 0 20px; /* 위아래 패딩은 0, 좌우 패딩만 */
-        border-radius: 0;
-        flex-grow: 1; /* ★ 남은 공간을 모두 차지 */
-        overflow-y: auto; /* ★ 내용이 넘치면 스크롤 */
-        margin: 0;
         width: 100%;
+        box-sizing: border-box;
     }
     
-    /* --- 복사된 대화 내용 (h3 타이틀) --- */
-    h3 {
+    /* --- 4. (Row 2) 채팅창 --- */
+    .chat-box {
+        background-color: #BACEE0; /* 배경색과 동일 */
+        border: none;
+        padding: 10px 20px 0 20px;
+        width: 100%;
+        flex-grow: 1; /* ★ 남는 공간 모두 차지 */
+        overflow-y: auto; /* ★ 내용 넘치면 스크롤 */
+        box-sizing: border-box;
+    }
+    
+    /* --- 5. (Optional) 복사 영역 --- */
+    h3[data-testid="stHeading"] {
         flex-shrink: 0; /* 높이 고정 */
         padding: 10px 20px 0 20px;
-        background-color: #f0f0f0;
+        background-color: #f7f7f7; /* 구분되는 배경색 */
         margin: 0;
         font-size: 16px;
+        width: 100%;
+        box-sizing: border-box;
     }
-    
-    /* --- 복사된 대화 내용 (Text Area) --- */
-    .stTextArea {
+    div[data-testid="stTextArea"] {
         flex-shrink: 0; /* 높이 고정 */
-        background-color: #f0f0f0;
-        padding: 10px 20px;
+        background-color: #f7f7f7;
+        padding: 10px 20px 10px 20px;
+        width: 100%;
+        box-sizing: border-box;
     }
-    .stTextArea textarea {
-        height: 150px !important; /* 높이 고정 */
+    div[data-testid="stTextArea"] textarea { 
+        height: 150px !important; 
     }
     
-    /* --- 하단 입력창 컨테이너 --- */
+    /* --- 6. (Row 3) 입력창 --- */
     .input-container {
-        /* position: fixed; <- 제거 */
         flex-shrink: 0; /* ★ 높이 고정 */
         width: 100%;
         background-color: #FFFFFF;
-        padding: 10px 10%; /* 좌우 여백 */
+        padding: 10px 20px; /* 좌우 여백 */
         box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
-        box-sizing: border-box; /* 패딩을 너비에 포함 */
+        box-sizing: border-box;
+    }
+    /* 입력창 내부 폼의 불필요한 패딩 제거 */
+    .input-container div[data-testid="stForm"] {
+        padding: 0 !important;
     }
 
-    /* --- 메시지 스타일 (이전과 동일) --- */
+    /* --- 7. 메시지 말풍선 스타일 (이전과 동일) --- */
     .message-container {
         display: flex;
         margin-bottom: 10px;
@@ -195,7 +211,6 @@ st.markdown(
     .message-user {
         background-color: #FEE500;
         color: #3C1E1E;
-        text-align: left;
         padding: 10px 12px;
         border-radius: 10px 0px 10px 10px;
         margin-left: auto;
@@ -206,7 +221,6 @@ st.markdown(
     .message-assistant {
         background-color: #FFFFFF;
         color: #000000;
-        text-align: left;
         padding: 10px 12px;
         border-radius: 0px 10px 10px 10px;
         margin-right: auto;
@@ -221,7 +235,7 @@ st.markdown(
         margin-right: 10px;
     }
     
-    /* --- 입력 필드 및 버튼 스타일 (이전과 동일) --- */
+    /* --- 8. 입력 필드/버튼 스타일 (이전과 동일) --- */
     .stTextInput > div > div > input {
         height: 38px;
         width: 100%;
@@ -265,9 +279,11 @@ st.markdown(
 # --------------------------------------------------
 # 페이지 레이아웃 (Flexbox 순서대로)
 # --------------------------------------------------
+
+# --- (Row 1) 타이틀 ---
 st.markdown('<h1 class="title">지렁이와 대화나누기</h1>', unsafe_allow_html=True)
 
-# --- 대화 내역 (flex-grow: 1) ---
+# --- (Row 2) 대화 내역 (flex-grow: 1) ---
 st.markdown('<div class="chat-box">', unsafe_allow_html=True)
 for msg in st.session_state.chat_history[3:]:
     if msg["role"] == "user":
@@ -283,15 +299,15 @@ for msg in st.session_state.chat_history[3:]:
             f"""
             <div class="message-container">
                 <img src="{bot_profile_url}" class="profile-pic" alt="프로필">
-                <div class="message-assistant">{msg['content']}</div>
+                <div class.message-assistant">{msg['content']}</div>
             </div>""",
             unsafe_allow_html=True,
         )
 st.markdown("</div>", unsafe_allow_html=True)
 
-# --- 복사된 대화 내용 (flex-shrink: 0) ---
+# --- (Optional) 복사된 대화 내용 (flex-shrink: 0) ---
 if st.session_state.copied_chat_history:
-    st.markdown("### 대화 내용 정리") # h3 태그로 스타일 적용
+    st.markdown("### 대화 내용 정리") # h3 태그
     st.text_area(
         "", 
         value=st.session_state.copied_chat_history, 
@@ -299,7 +315,7 @@ if st.session_state.copied_chat_history:
         label_visibility="collapsed"
     )
 
-# --- 입력창 (flex-shrink: 0) ---
+# --- (Row 3) 입력창 (flex-shrink: 0) ---
 st.markdown('<div class="input-container">', unsafe_allow_html=True)
 with st.form("input_form", clear_on_submit=True):
     col1, col2, col3 = st.columns([0.75, 0.125, 0.125])
