@@ -124,13 +124,16 @@ st.markdown(
     }
 
     /* --- 2. 메인 컨텐츠 영역 (Flexbox 프레임) --- */
-    div.main .block-container {
+    /* Streamlit v1.33.0 기준 .block-container 선택자 */
+    div[data-testid="stAppViewContainer"] > .main .block-container {
         height: 100% !important;
         display: flex !important;
         flex-direction: column !important;
         padding: 0 !important;
         margin: 0 auto !important;
         background-color: #BACEE0 !important; 
+        /* Streamlit 기본 max-width 유지 */
+        max-width: 730px !important; 
     }
 
     /* --- 3. (Row 1) 타이틀 --- */
@@ -171,18 +174,17 @@ st.markdown(
         background-color: #FFFFFF !important;
         padding: 10px 20px !important;
         box-shadow: 0 -2px 5px rgba(0,0,0,0.05) !important;
+        box-sizing: border-box !important;
+        width: 100% !important;
     }
     .input-container div[data-testid="stForm"] {
         padding: 0 !important;
     }
 
     /* --- 7. 메시지 말풍선 --- */
-    .message-user { background-color: #FEE500 !important; ... }
-    .message-assistant { background-color: #FFFFFF !important; ... }
-    /* (말풍선 나머지 스타일은 이전과 동일) */
     .message-container { display: flex; margin-bottom: 10px; align-items: flex-start; }
-    .message-user { background-color: #FEE500; color: #3C1E1E; padding: 10px 12px; border-radius: 10px 0px 10px 10px; margin-left: auto; max-width: 65%; box-shadow: 2px 2px 5px rgba(0,0,0,0.05); word-wrap: break-word; }
-    .message-assistant { background-color: #FFFFFF; color: #000000; padding: 10px 12px; border-radius: 0px 10px 10px 10px; margin-right: auto; max-width: 65%; box-shadow: 2px 2px 5px rgba(0,0,0,0.05); word-wrap: break-word; }
+    .message-user { background-color: #FEE500 !important; color: #3C1E1E !important; padding: 10px 12px; border-radius: 10px 0px 10px 10px; margin-left: auto; max-width: 65%; box-shadow: 2px 2px 5px rgba(0,0,0,0.05); word-wrap: break-word; }
+    .message-assistant { background-color: #FFFFFF !important; color: #000000 !important; padding: 10px 12px; border-radius: 0px 10px 10px 10px; margin-right: auto; max-width: 65%; box-shadow: 2px 2px 5px rgba(0,0,0,0.05); word-wrap: break-word; }
     .profile-pic { width: 40px; height: 40px; border-radius: 15px; margin-right: 10px; }
     
     
@@ -193,13 +195,13 @@ st.markdown(
     }
     
     /* ★ '전송' 버튼 강제 스타일 */
-    .stButton button {
+    div[data-testid="column"]:nth-of-type(2) .stButton button {
         background-color: #FEE500 !important;
         color: #3C1E1E !important;
         border: none !important;
         font-weight: bold !important;
     }
-    .stButton button:hover {
+    div[data-testid="column"]:nth-of-type(2) .stButton button:hover {
         background-color: #F0D900 !important;
         color: #3C1E1E !important;
     }
