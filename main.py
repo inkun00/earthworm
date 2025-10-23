@@ -112,90 +112,107 @@ completion_executor = CompletionExecutor(
 )
 
 # --------------------------------------------------
-# 페이지 스타일 (position: fixed 사용)
+# 페이지 스타일 (최종 - !important 강제 적용)
 # --------------------------------------------------
 st.markdown(
     """
     <style>
-    /* --- 1. 페이지 전체 배경 --- */
-    body, .main, div[data-testid="stAppViewContainer"] {
+    /* --- 1. 부모 요소들 높이 100% 강제 --- */
+    html, body, #root, div[data-testid="stAppViewContainer"], .main {
+        height: 100% !important;
         background-color: #BACEE0 !important;
-    }
-    
-    /* --- 2. 메인 컨텐츠 영역 (가운데 정렬) --- */
-    .block-container {
-        background-color: #BACEE0 !important;
-        /* max-width는 Streamlit 기본값을 따름 */
     }
 
-    /* --- 3. 타이틀 --- */
+    /* --- 2. 메인 컨텐츠 영역 (Flexbox 프레임) --- */
+    div.main .block-container {
+        height: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        padding: 0 !important;
+        margin: 0 auto !important;
+        background-color: #BACEE0 !important; 
+    }
+
+    /* --- 3. (Row 1) 타이틀 --- */
     .title {
+        flex-shrink: 0 !important; /* ★ 프레임 고정 */
         font-size: 24px !important;
         font-weight: bold;
         text-align: center;
-        padding: 15px 10px 10px 10px;
-        color: #000;
+        padding: 15px 10px 10px 10px !important;
+        color: #000 !important;
     }
     
-    /* --- 4. 채팅창 --- */
+    /* --- 4. (Row 2) 채팅창 --- */
     .chat-box {
-        background-color: #BACEE0;
-        padding: 10px 20px 0 20px;
-        width: 100%;
-        box-sizing: border-box;
-        
-        /* ★★★ 핵심 ★★★ */
-        /* 화면 높이에서 타이틀, 입력창 높이를 대략 뺀 값 */
-        height: 75vh; 
-        overflow-y: auto; /* ★ 스크롤 */
-        
-        /* ★ 입력창에 가려지지 않도록 하단에 충분한 여백 */
-        padding-bottom: 120px; 
+        flex-grow: 1 !important; /* ★ 프레임 (남는 공간 모두 차지) */
+        overflow-y: auto !important; /* ★ 스크롤 */
+        background-color: #BACEE0 !important;
+        padding: 10px 20px 0 20px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
     
-    /* --- 5. 복사 영역 (채팅창 내부) --- */
+    /* --- 5. (Optional) 복사 영역 --- */
     h3[data-testid="stHeading"] {
-        padding-top: 10px;
-        font-size: 16px;
+        flex-shrink: 0 !important; /* ★ 프레임 고정 */
+        background-color: #f7f7f7 !important;
+        padding: 10px 20px 0 20px !important;
     }
-    div[data-testid="stTextArea"] textarea { 
-        height: 150px !important; 
+    div[data-testid="stTextArea"] {
+        flex-shrink: 0 !important; /* ★ 프레임 고정 */
+        background-color: #f7f7f7 !important;
+        padding: 10px 20px 10px 20px !important;
     }
     
-    /* --- 6. 입력창 --- */
+    /* --- 6. (Row 3) 입력창 --- */
     .input-container {
-        /* ★★★ 핵심 ★★★ */
-        position: fixed; /* 화면에 고정 */
-        bottom: 0;       /* 화면 맨 아래에 */
-        
-        /* Streamlit의 .block-container 너비와 맞춤 */
-        left: 50%; 
-        transform: translateX(-50%);
-        max-width: 730px; /* Streamlit 기본 centered 너비 */
-        width: 100%;      /* 부모 너비에 맞춤 */
-
-        background-color: #FFFFFF;
-        padding: 10px 20px;
-        box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
-        box-sizing: border-box;
+        flex-shrink: 0 !important; /* ★ 프레임 고정 */
+        background-color: #FFFFFF !important;
+        padding: 10px 20px !important;
+        box-shadow: 0 -2px 5px rgba(0,0,0,0.05) !important;
     }
     .input-container div[data-testid="stForm"] {
         padding: 0 !important;
     }
 
-    /* --- 7. 메시지 말풍선 스타일 --- */
+    /* --- 7. 메시지 말풍선 --- */
+    .message-user { background-color: #FEE500 !important; ... }
+    .message-assistant { background-color: #FFFFFF !important; ... }
+    /* (말풍선 나머지 스타일은 이전과 동일) */
     .message-container { display: flex; margin-bottom: 10px; align-items: flex-start; }
     .message-user { background-color: #FEE500; color: #3C1E1E; padding: 10px 12px; border-radius: 10px 0px 10px 10px; margin-left: auto; max-width: 65%; box-shadow: 2px 2px 5px rgba(0,0,0,0.05); word-wrap: break-word; }
     .message-assistant { background-color: #FFFFFF; color: #000000; padding: 10px 12px; border-radius: 0px 10px 10px 10px; margin-right: auto; max-width: 65%; box-shadow: 2px 2px 5px rgba(0,0,0,0.05); word-wrap: break-word; }
     .profile-pic { width: 40px; height: 40px; border-radius: 15px; margin-right: 10px; }
     
-    /* --- 8. 입력 필드/버튼 스타일 --- */
-    .stTextInput > div > div > input { height: 38px; width: 100%; background-color: #F5F5F5; border: none; border-radius: 5px; padding-left: 10px; }
-    div[data-testid="column"] { padding-left: 5px !important; padding-right: 5px !important; }
-    .stButton button { height: 38px; width: 100%; padding: 0 10px; margin: 0 !important; background-color: #FEE500; color: #3C1E1E; border: none; border-radius: 5px; font-weight: bold; }
-    .stButton button:hover { background-color: #F0D900; color: #3C1E1E; }
-    div[data-testid="column"]:nth-of-type(3) .stButton button { background-color: #F0F0F0; color: #555; }
-    div[data-testid="column"]:nth-of-type(3) .stButton button:hover { background-color: #E0E0E0; color: #333; }
+    
+    /* --- 8. 입력 필드/버튼 --- */
+    .stTextInput > div > div > input {
+        background-color: #F5F5F5 !important;
+        border: none !important;
+    }
+    
+    /* ★ '전송' 버튼 강제 스타일 */
+    .stButton button {
+        background-color: #FEE500 !important;
+        color: #3C1E1E !important;
+        border: none !important;
+        font-weight: bold !important;
+    }
+    .stButton button:hover {
+        background-color: #F0D900 !important;
+        color: #3C1E1E !important;
+    }
+    
+    /* ★ '복사' 버튼만 강제 스타일 (3번째 컬럼) */
+    div[data-testid="column"]:nth-of-type(3) .stButton button {
+        background-color: #F0F0F0 !important;
+        color: #555 !important;
+    }
+    div[data-testid="column"]:nth-of-type(3) .stButton button:hover {
+        background-color: #E0E0E0 !important;
+        color: #333 !important;
+    }
     </style>
     """,
     unsafe_allow_html=True,
