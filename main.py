@@ -118,28 +118,28 @@ completion_executor = CompletionExecutor(
     request_id="d1950869-54c9-4bb8-988d-6967d113e03f",
 )
 
+
 # --------------------------------------------------
-# 페이지 스타일 (카카오톡 스타일 - Flexbox 레이아웃)
+# 페이지 스타일 (카카오톡 스타일 - Flexbox 레이아웃 최종)
 # --------------------------------------------------
 st.markdown(
     """
     <style>
-    /* --- 1. 페이지 전체 배경 --- */
-    body, .main, div[data-testid="stAppViewContainer"] {
-        background-color: #BACEE0 !important;
+    /* --- 1. 부모 요소들 높이 100% 강제 --- */
+    html, body, #root, div[data-testid="stAppViewContainer"], .main {
+        height: 100% !important;
+        background-color: #BACEE0 !important; /* 배경색도 확실하게 */
     }
 
     /* --- 2. 메인 컨텐츠 영역 (가운데 정렬된) --- */
     div[data-testid="stAppViewContainer"] > .main .block-container {
         display: flex;
         flex-direction: column;
-        height: 100vh; /* ★ 화면 전체 높이 */
+        height: 100% !important; /* ★ 부모가 100%이니, 자식도 100%로 */
         
         /* Streamlit 기본값 덮어쓰기 */
         padding: 0 !important;
-        margin: 0 auto !important; /* 가운데 정렬 유지 */
-        
-        /* 앱 내부 배경색도 동일하게 */
+        margin: 0 auto !important;
         background-color: #BACEE0 !important; 
     }
 
@@ -149,7 +149,7 @@ st.markdown(
         font-weight: bold;
         text-align: center;
         padding: 15px 10px 10px 10px;
-        background-color: #BACEE0; /* 배경색과 동일 */
+        background-color: #BACEE0;
         flex-shrink: 0; /* ★ 높이 고정 */
         color: #000;
         width: 100%;
@@ -158,7 +158,7 @@ st.markdown(
     
     /* --- 4. (Row 2) 채팅창 --- */
     .chat-box {
-        background-color: #BACEE0; /* 배경색과 동일 */
+        background-color: #BACEE0;
         border: none;
         padding: 10px 20px 0 20px;
         width: 100%;
@@ -171,7 +171,7 @@ st.markdown(
     h3[data-testid="stHeading"] {
         flex-shrink: 0; /* 높이 고정 */
         padding: 10px 20px 0 20px;
-        background-color: #f7f7f7; /* 구분되는 배경색 */
+        background-color: #f7f7f7;
         margin: 0;
         font-size: 16px;
         width: 100%;
@@ -197,7 +197,6 @@ st.markdown(
         box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
         box-sizing: border-box;
     }
-    /* 입력창 내부 폼의 불필요한 패딩 제거 */
     .input-container div[data-testid="stForm"] {
         padding: 0 !important;
     }
