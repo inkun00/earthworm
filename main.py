@@ -109,7 +109,7 @@ completion_executor = CompletionExecutor(
 )
 
 # --------------------------------------------------
-# 페이지 스타일 (입력창 배경 변경)
+# 페이지 스타일 (Form 배경색 수정)
 # --------------------------------------------------
 st.markdown(
     """
@@ -133,7 +133,7 @@ st.markdown(
 
     /* --- 3. (Row 1) 타이틀 --- */
     .title {
-        flex-shrink: 0 !important; /* ★ 프레임 고정 */
+        flex-shrink: 0 !important;
         font-size: 24px !important;
         font-weight: bold;
         text-align: center;
@@ -143,30 +143,30 @@ st.markdown(
     
     /* --- 4. (Row 2) 채팅창 --- */
     .chat-box {
-        flex-grow: 1 !important; /* ★ 프레임 (남는 공간 모두 차지) */
-        overflow-y: auto !important; /* ★ 스크롤 */
+        flex-grow: 1 !important;
+        overflow-y: auto !important;
         background-color: #BACEE0 !important;
         padding: 10px 20px 0 20px !important;
         width: 100% !important;
         box-sizing: border-box !important;
     }
     
-    /* --- 5. (Optional) 복사 영역 CSS 제거 --- */
-    
     /* --- 6. (Row 3) 입력창 --- */
     .input-container {
-        flex-shrink: 0 !important; /* ★ 프레임 고정 */
-        
-        /* ★★★ 수정된 부분 ★★★ */
-        background-color: #BACEE0 !important; /* 배경색을 하늘색으로 */
-        box-shadow: none !important; /* 그림자 제거 */
-        
+        flex-shrink: 0 !important;
+        background-color: #BACEE0 !important;
+        box-shadow: none !important;
         padding: 10px 20px !important;
         box-sizing: border-box !important;
         width: 100% !important;
     }
+    
+    /* ★★★ 수정된 부분 ★★★ */
+    /* 폼 자체의 배경색을 하늘색으로 */
     .input-container div[data-testid="stForm"] {
         padding: 0 !important;
+        background-color: #BACEE0 !important;
+        border: none !important; /* 혹시 모를 테두리 제거 */
     }
 
     /* --- 7. 메시지 말풍선 --- */
@@ -178,14 +178,12 @@ st.markdown(
     
     /* --- 8. 입력 필드/버튼 --- */
     .stTextInput > div > div > input {
-        /* ★★★ 수정된 부분 ★★★ */
         background-color: #FFFFFF !important; /* 입력 상자 흰색 */
         border: none !important;
     }
     
     /* ★ '전송' 버튼 강제 스타일 */
     div[data-testid="column"]:nth-of-type(2) .stButton button {
-        /* ★★★ 수정된 부분 ★★★ */
         background-color: #FFFFFF !important; /* 전송 버튼 흰색 */
         color: #3C1E1E !important; /* 글자색 검정/갈색 */
         border: none !important;
@@ -285,5 +283,3 @@ if send and user_input:
         )
     
     st.rerun()
-
-# '복사' 관련 로직 없음
