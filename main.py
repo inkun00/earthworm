@@ -31,15 +31,14 @@ if "chat_history" not in st.session_state:
                 "숨 쉬려고 땅 밖으로 나오는데, 흙을 못 찾으면 강한 햇볕에 말라 죽기도 해."
             ),
         },
-        {"role": "assistant", "content": "알겠어."},
+        {"role": "assistant", "content": "알겠어."}, # [0], [1]번은 시스템용
         {
             "role": "assistant",
-            "content": "안녕! 나는 지렁이야. 궁금한 거 있니?",
+            "content": "안녕! 나는 지렁이야. 궁금한 거 있니?", # [2]번. 이게 첫 메시지
         },
     ]
 
-if "copied_chat_history" not in st.session_state:
-    st.session_state.copied_chat_history = ""
+# 'copied_chat_history' 관련 세션 상태 제거
 
 # --------------------------------------------------
 # 스트리밍 응답 합치기용 실행기
@@ -112,7 +111,7 @@ completion_executor = CompletionExecutor(
 )
 
 # --------------------------------------------------
-# 페이지 스타일 (최종 - !important 강제 적용)
+# 페이지 스타일 (복사 버튼 관련 CSS 제거)
 # --------------------------------------------------
 st.markdown(
     """
@@ -124,7 +123,6 @@ st.markdown(
     }
 
     /* --- 2. 메인 컨텐츠 영역 (Flexbox 프레임) --- */
-    /* Streamlit v1.33.0 기준 .block-container 선택자 */
     div[data-testid="stAppViewContainer"] > .main .block-container {
         height: 100% !important;
         display: flex !important;
@@ -132,7 +130,6 @@ st.markdown(
         padding: 0 !important;
         margin: 0 auto !important;
         background-color: #BACEE0 !important; 
-        /* Streamlit 기본 max-width 유지 */
         max-width: 730px !important; 
     }
 
@@ -156,17 +153,7 @@ st.markdown(
         box-sizing: border-box !important;
     }
     
-    /* --- 5. (Optional) 복사 영역 --- */
-    h3[data-testid="stHeading"] {
-        flex-shrink: 0 !important; /* ★ 프레임 고정 */
-        background-color: #f7f7f7 !important;
-        padding: 10px 20px 0 20px !important;
-    }
-    div[data-testid="stTextArea"] {
-        flex-shrink: 0 !important; /* ★ 프레임 고정 */
-        background-color: #f7f7f7 !important;
-        padding: 10px 20px 10px 20px !important;
-    }
+    /* --- 5. (Optional) 복사 영역 CSS 제거 --- */
     
     /* --- 6. (Row 3) 입력창 --- */
     .input-container {
@@ -194,7 +181,7 @@ st.markdown(
         border: none !important;
     }
     
-    /* ★ '전송' 버튼 강제 스타일 */
+    /* ★ '전송' 버튼 강제 스타일 (2번째 컬럼) */
     div[data-testid="column"]:nth-of-type(2) .stButton button {
         background-color: #FEE500 !important;
         color: #3C1E1E !important;
@@ -206,30 +193,26 @@ st.markdown(
         color: #3C1E1E !important;
     }
     
-    /* ★ '복사' 버튼만 강제 스타일 (3번째 컬럼) */
-    div[data-testid="column"]:nth-of-type(3) .stButton button {
-        background-color: #F0F0F0 !important;
-        color: #555 !important;
-    }
-    div[data-testid="column"]:nth-of-type(3) .stButton button:hover {
-        background-color: #E0E0E0 !important;
-        color: #333 !important;
-    }
+    /* ★ '복사' 버튼 (3번째 컬럼) CSS 제거 */
+
     </style>
     """,
     unsafe_allow_html=True,
 )
 
 # --------------------------------------------------
-# 페이지 레이아웃 (순서 변경)
+# 페이지 레이아웃
 # --------------------------------------------------
 
 # --- (Row 1) 타이틀 ---
 st.markdown('<h1 class="title">지렁이와 대화나누기</h1>', unsafe_allow_html=True)
 
-# --- (Row 2) 대화 내역 (스크롤 영역) ---
+# --- (Row 2) 대화 내역 (flex-grow: 1) ---
 st.markdown('<div class="chat-box">', unsafe_allow_html=True)
-for msg in st.session_state.chat_history[3:]:
+
+# ★★★ 수정된 부분 ★★★
+# [3:] -> [2:]로 변경하여 지렁이의 첫인사부터 표시
+for msg in st.session_state.chat_history[2:]: 
     if msg["role"] == "user":
         st.markdown(
             f"""
@@ -243,27 +226,21 @@ for msg in st.session_state.chat_history[3:]:
             f"""
             <div class="message-container">
                 <img src="{bot_profile_url}" class="profile-pic" alt="프로필">
-                <div class="message-assistant">{msg['content']}</div>
+                <div class.message-assistant">{msg['content']}</div>
             </div>""",
             unsafe_allow_html=True,
         )
+st.markdown("</div>", unsafe_allow_html=True)
 
-# --- (Moved) 복사된 대화 내용 (채팅창 내부에 표시) ---
-if st.session_state.copied_chat_history:
-    st.markdown("### 대화 내용 정리")
-    st.text_area(
-        "", 
-        value=st.session_state.copied_chat_history, 
-        height=150, 
-        label_visibility="collapsed"
-    )
-st.markdown("</div>", unsafe_allow_html=True) # chat-box 닫기
+# --- (Optional) 복사된 대화 내용 표시' 부분 제거 ---
 
 
-# --- (Row 3) 입력창 (화면 하단 고정) ---
+# --- (Row 3) 입력창 (복사 버튼 제거) ---
 st.markdown('<div class="input-container">', unsafe_allow_html=True)
 with st.form("input_form", clear_on_submit=True):
-    col1, col2, col3 = st.columns([0.75, 0.125, 0.125])
+    # ★★★ 수정된 부분 ★★★
+    # 3컬럼 -> 2컬럼으로 변경, 비율 조정
+    col1, col2 = st.columns([0.85, 0.15]) 
     with col1:
         user_input = st.text_input(
             "메시지를 입력하세요:",
@@ -273,8 +250,7 @@ with st.form("input_form", clear_on_submit=True):
         )
     with col2:
         send = st.form_submit_button("전송")
-    with col3:
-        copy = st.form_submit_button("복사")
+    # 'col3' (복사 버튼) 제거
 st.markdown("</div>", unsafe_allow_html=True)
 
 # --------------------------------------------------
@@ -313,17 +289,10 @@ if send and user_input:
             {"role": "assistant", "content": assistant_text}
         )
     
-    if st.session_state.copied_chat_history:
-        st.session_state.copied_chat_history = ""
+    # 'copied_chat_history' 초기화 로직 제거
         
     st.rerun()
 
 # --------------------------------------------------
-# '복사' 처리
+# '복사' 처리' 블록 전체 제거
 # --------------------------------------------------
-if copy:
-    lines = st.session_state.chat_history[3:]
-    st.session_state.copied_chat_history = "\n".join(
-        f"{'나' if m['role'] == 'user' else '지렁이'}: {m['content']}" for m in lines
-    )
-    st.rerun()
