@@ -1,3 +1,113 @@
+import streamlit as st
+import requests
+import json
+import random
+import re
+
+# --------------------------------------------------
+# Github RAW 이미지 사용
+# --------------------------------------------------
+image_urls = [
+    f"https://raw.githubusercontent.com/inkun00/earthworm/main/image/image{i}.png"
+    for i in range(1, 10)
+]
+
+if "selected_image" not in st.session_state:
+    st.session_state.selected_image = random.choice(image_urls)
+bot_profile_url = st.session_state.selected_image
+
+# --------------------------------------------------
+# 대화 기록 초기화
+# --------------------------------------------------
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = [
+        {
+            "role": "system",
+            "content": (
+                "너는 지렁이야. 너의 이름은 너가 알아서 지어. "
+                "너는 내 친구야. 다정한 말투로 대화해. 나에게 친한 말투로 반말을 사용해. "
+                "대화는 2문장 이내로 간단하게 해. 지렁이는 습하고 기름진 땅을 좋아해. "
+                "피부를 통해 산소를 빨아들여. 비가 오면 흙 속 산소가 부족해져서 "
+                "숨 쉬려고 땅 밖으로 나오는데, 흙을 못 찾으면 강한 햇볕에 말라 죽기도 해."
+            ),
+        },
+        {"role": "assistant", "content": "알겠어."}, # [0], [1]번은 시스템용
+        {
+            "role": "assistant",
+            "content": "안녕! 나는 지렁이야. 궁금한 거 있니?", # [2]번. 이게 첫 메시지
+        },
+    ]
+
+# --------------------------------------------------
+# 스트리밍 응답 합치기용 실행기
+# --------------------------------------------------
+class CompletionExecutor:
+    def __init__(self, host, api_key, api_key_primary_val, request_id):
+        self._host = host
+        self._api_key = api_key
+        self._api_key_primary_val = api_key_primary_val
+        self._request_id = request_id
+
+    def execute(self, completion_request):
+        headers = {
+            "X-NCP-CLOVASTUDIO-API-KEY": self._api_key,
+            "X-NCP-APIGW-API-KEY": self._api_key_primary_val,
+            "X-NCP-CLOVASTUDIO-REQUEST-ID": self._request_id,
+            "Content-Type": "application/json; charset=utf-8",
+            "Accept": "text/event-stream",
+        }
+        try:
+            r = requests.post(
+                self._host + "/testapp/v1/chat-completions/HCX-003",
+                headers=headers,
+                json=completion_request,
+                stream=True,
+                timeout=60,
+            )
+            r.raise_for_status()
+
+            full_response = ""
+            for raw_line in r.iter_lines(decode_unicode=True):
+                if not raw_line:
+                    continue
+                line = raw_line.strip()
+                if not line.startswith("data:"):
+                    continue
+                data_str = line[5:].strip()
+                if data_str == "[DONE]":
+                    break
+
+                try:
+                    chunk = json.loads(data_str)
+                except json.JSONDecodeError:
+                    continue
+
+                delta = chunk.get("message", {}).get("content", "")
+                if delta:
+                    if delta.startswith(full_response):
+                        full_response = delta
+                    else:
+                        full_response += delta
+            
+            return full_response.strip()
+
+        except requests.exceptions.RequestException as e:
+            st.error(f"API 요청 중 오류 발생: {e}")
+            return "미안, 지금은 대답하기 어려워. 흙 속에서 잠시 쉬어야겠어."
+        except Exception as e:
+            st.error(f"응답 처리 중 알 수 없는 오류 발생: {e}")
+            return "지금 뭔가 문제가 생겼나 봐. 다시 시도해 줄래?"
+
+# --------------------------------------------------
+# 클로바 스튜디오 실행기
+# --------------------------------------------------
+completion_executor = CompletionExecutor(
+    host="https://clovastudio.stream.ntruss.com",
+    api_key="NTA0MjU2MWZlZTcxNDJiY6Yo7+BLuaAQ2B5+PgEazGquXEqiIf8NRhOG34cVQNdq",
+    api_key_primary_val="DilhGClorcZK5OTo1QgdfoDQnBNOkNaNksvlAVFE",
+    request_id="d1950869-54c9-4bb8-988d-6967d113e03f",
+)
+
 # --------------------------------------------------
 # 페이지 스타일 (입력창 배경 변경)
 # --------------------------------------------------
@@ -90,3 +200,90 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+# --------------------------------------------------
+# 페이지 레이아웃
+# --------------------------------------------------
+
+# --- (Row 1) 타이틀 ---
+st.markdown('<h1 class="title">지렁이와 대화나누기</h1>', unsafe_allow_html=True)
+
+# --- (Row 2) 대화 내역 (flex-grow: 1) ---
+st.markdown('<div class="chat-box">', unsafe_allow_html=True)
+
+# ★★★ [2:]로 변경하여 지렁이의 첫인사부터 표시
+for msg in st.session_state.chat_history[2:]: 
+    if msg["role"] == "user":
+        st.markdown(
+            f"""
+            <div class="message-container">
+                <div class="message-user">{msg['content']}</div>
+            </div>""",
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            f"""
+            <div class="message-container">
+                <img src="{bot_profile_url}" class="profile-pic" alt="프로필">
+                <div class="message-assistant">{msg['content']}</div>
+            </div>""",
+            unsafe_allow_html=True,
+        )
+st.markdown("</div>", unsafe_allow_html=True)
+
+# --- (Row 3) 입력창 (복사 버튼 제거) ---
+st.markdown('<div class="input-container">', unsafe_allow_html=True)
+with st.form("input_form", clear_on_submit=True):
+    # ★★★ 2컬럼으로 변경, 비율 조정
+    col1, col2 = st.columns([0.85, 0.15]) 
+    with col1:
+        user_input = st.text_input(
+            "메시지를 입력하세요:",
+            key="input_message",
+            label_visibility="collapsed",
+            placeholder="메시지를 입력하세요...",
+        )
+    with col2:
+        send = st.form_submit_button("전송")
+st.markdown("</div>", unsafe_allow_html=True)
+
+# --------------------------------------------------
+# '전송' 처리
+# --------------------------------------------------
+if send and user_input:
+    st.session_state.chat_history.append({"role": "user", "content": user_input})
+    req = {
+        "messages": st.session_state.chat_history,
+        "topP": 0.8,
+        "topK": 0,
+        "maxTokens": 256,
+        "temperature": 0.7,
+        "repeatPenalty": 1.2,
+        "stopBefore": [],
+        "includeAiFilters": True,
+        "seed": 0,
+    }
+    
+    with st.spinner("지렁이가 꿈틀꿈틀 생각 중..."):
+        assistant_text = completion_executor.execute(req)
+
+    def _norm(text):
+        return re.sub(r"\s+", " ", text.strip())
+
+    last_assistant = next(
+        (
+            m["content"]
+            for m in reversed(st.session_state.chat_history[:-1])
+            if m["role"] == "assistant"
+        ),
+        "",
+    )
+    if assistant_text and _norm(assistant_text) != _norm(last_assistant):
+        st.session_state.chat_history.append(
+            {"role": "assistant", "content": assistant_text}
+        )
+    
+    st.rerun()
+
+# '복사' 관련 로직 없음
