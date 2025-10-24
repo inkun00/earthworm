@@ -109,7 +109,7 @@ completion_executor = CompletionExecutor(
 )
 
 # --------------------------------------------------
-# 페이지 스타일 (Form 배경색 수정)
+# 페이지 스타일 (Form 배경색 수정 - 연한 회색)
 # --------------------------------------------------
 st.markdown(
     """
@@ -154,19 +154,20 @@ st.markdown(
     /* --- 6. (Row 3) 입력창 --- */
     .input-container {
         flex-shrink: 0 !important;
-        background-color: #BACEE0 !important;
-        box-shadow: none !important;
+        /* ★★★ 수정된 부분 ★★★ */
+        background-color: #F5F5F5 !important; /* 연한 회색 */
+        box-shadow: 0 -1px 3px rgba(0,0,0,0.03) !important; /* 아주 연한 그림자 */
         padding: 10px 20px !important;
         box-sizing: border-box !important;
         width: 100% !important;
     }
     
     /* ★★★ 수정된 부분 ★★★ */
-    /* 폼 자체의 배경색을 하늘색으로 */
+    /* 폼 자체의 배경색을 연한 회색으로 */
     .input-container div[data-testid="stForm"] {
         padding: 0 !important;
-        background-color: #BACEE0 !important;
-        border: none !important; /* 혹시 모를 테두리 제거 */
+        background-color: #F5F5F5 !important; /* 연한 회색 */
+        border: none !important;
     }
 
     /* --- 7. 메시지 말풍선 --- */
