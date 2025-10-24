@@ -109,7 +109,7 @@ completion_executor = CompletionExecutor(
 )
 
 # --------------------------------------------------
-# 페이지 스타일 (Form 배경색 수정 - 연한 회색)
+# 페이지 스타일 (내부 컴포넌트 회색)
 # --------------------------------------------------
 st.markdown(
     """
@@ -155,18 +155,18 @@ st.markdown(
     .input-container {
         flex-shrink: 0 !important;
         /* ★★★ 수정된 부분 ★★★ */
-        background-color: #F5F5F5 !important; /* 연한 회색 */
-        box-shadow: 0 -1px 3px rgba(0,0,0,0.03) !important; /* 아주 연한 그림자 */
+        background-color: #BACEE0 !important; /* 다시 하늘색으로 */
+        box-shadow: none !important;
         padding: 10px 20px !important;
         box-sizing: border-box !important;
         width: 100% !important;
     }
     
     /* ★★★ 수정된 부분 ★★★ */
-    /* 폼 자체의 배경색을 연한 회색으로 */
+    /* 폼 자체의 배경색을 하늘색으로 */
     .input-container div[data-testid="stForm"] {
         padding: 0 !important;
-        background-color: #F5F5F5 !important; /* 연한 회색 */
+        background-color: #BACEE0 !important; /* 다시 하늘색으로 */
         border: none !important;
     }
 
@@ -179,19 +179,21 @@ st.markdown(
     
     /* --- 8. 입력 필드/버튼 --- */
     .stTextInput > div > div > input {
-        background-color: #FFFFFF !important; /* 입력 상자 흰색 */
+        /* ★★★ 수정된 부분 ★★★ */
+        background-color: #F5F5F5 !important; /* 입력 상자 연한 회색 */
         border: none !important;
     }
     
     /* ★ '전송' 버튼 강제 스타일 */
     div[data-testid="column"]:nth-of-type(2) .stButton button {
-        background-color: #FFFFFF !important; /* 전송 버튼 흰색 */
-        color: #3C1E1E !important; /* 글자색 검정/갈색 */
+        /* ★★★ 수정된 부분 ★★★ */
+        background-color: #F5F5F5 !important; /* 전송 버튼 연한 회색 */
+        color: #3C1E1E !important; 
         border: none !important;
         font-weight: bold !important;
     }
     div[data-testid="column"]:nth-of-type(2) .stButton button:hover {
-        background-color: #F0F0F0 !important; /* 호버 시 회색 */
+        background-color: #E0E0E0 !important; /* 호버 시 조금 더 진한 회색 */
         color: #3C1E1E !important;
     }
 
@@ -225,7 +227,7 @@ for msg in st.session_state.chat_history[2:]:
             f"""
             <div class="message-container">
                 <img src="{bot_profile_url}" class="profile-pic" alt="프로필">
-                <div class="message-assistant">{msg['content']}</div>
+                <div class.message-assistant">{msg['content']}</div>
             </div>""",
             unsafe_allow_html=True,
         )
